@@ -459,7 +459,7 @@ void main() {
         'tag': 'mixed-in',
         'listen': '127.0.0.1',
         'listen_port': 2080,
-        'set_system_proxy': true,
+        'set_system_proxy': false,
       });
       expect((c['experimental']! as Map)['clash_api'], {
         'external_controller': '127.0.0.1:9090',

@@ -85,6 +85,8 @@ Future<ProviderContainer> pumpApp(
       overrides: [
         sharedPreferencesProvider.overrideWithValue(instance),
         appPlatformProvider.overrideWithValue(platform),
+        desktopShellProvider.overrideWithValue(false),
+        freePortProvider.overrideWithValue(() async => 7890),
         nowProvider.overrideWithValue(now),
         serverRepositoryProvider.overrideWithValue(servers),
         subscriptionRepositoryProvider.overrideWithValue(

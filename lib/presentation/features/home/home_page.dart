@@ -10,6 +10,7 @@ import '../../../core/l10n.dart';
 import '../../../domain/vpn/vpn_core.dart';
 import '../../router/app_router.dart';
 import '../../shell/app_logo.dart';
+import '../../shell/desktop_integration.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/tokens.dart';
 import '../../widgets/app_buttons.dart';
@@ -83,6 +84,18 @@ class HomePage extends ConsumerWidget {
               const SizedBox(height: AppSpacing.sm),
               ConnectionCaption(state: vpn),
               const _IssueBanner(),
+              if (vpn.status == VpnStatus.error && vpn.error == 'admin-required')
+                Padding(
+                  padding: const EdgeInsets.only(top: AppSpacing.md),
+                  child: Center(
+                    child: SoftButton(
+                      label: l10n.restartAsAdmin,
+                      icon: LucideIcons.shieldCheck,
+                      tone: SoftButtonTone.accent,
+                      onPressed: restartAsAdministrator,
+                    ),
+                  ),
+                ),
               const SizedBox(height: AppSpacing.xxl),
               if (server != null)
                 item(

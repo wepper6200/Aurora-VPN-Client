@@ -249,7 +249,9 @@ abstract final class SingBoxConfigBuilder {
         'tag': mixedTag,
         'listen': '127.0.0.1',
         'listen_port': options.mixedPort,
-        'set_system_proxy': true,
+        // The app sets and always clears the system proxy itself (a killed
+        // core can't restore it).
+        'set_system_proxy': false,
       };
     }
     final split =

@@ -11,12 +11,16 @@ import 'application/settings/settings_controller.dart';
 import 'core/platform.dart';
 import 'data/storage/database.dart';
 import 'data/storage/field_cipher.dart';
+import 'presentation/shell/desktop_integration.dart';
 
-Future<void> main() async {
+Future<void> main(List<String> args) async {
   WidgetsFlutterBinding.ensureInitialized();
 
   if (AppPlatform.detect().isDesktop) {
-    await _initWindow();
+    // Clean up after a previous run that died with the core still running
+    // (orphaned sing-box/xray, system proxy left on).
+    await windowsCore().recover().catchError((_) {});
+    await _initWindow(show: !args.contains(WindowsAutostart.minimizedFlag));
   }
 
   final (prefs, cipher) = await (
@@ -43,7 +47,7 @@ Future<void> main() async {
   );
 }
 
-Future<void> _initWindow() async {
+Future<void> _initWindow({required bool show}) async {
   await windowManager.ensureInitialized();
   const options = WindowOptions(
     size: Size(460, 800),
@@ -54,6 +58,8 @@ Future<void> _initWindow() async {
     backgroundColor: Colors.transparent,
   );
   await windowManager.waitUntilReadyToShow(options, () async {
+    // Autostart launches straight into the tray.
+    if (!show) return;
     await windowManager.show();
     await windowManager.focus();
   });

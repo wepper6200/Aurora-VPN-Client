@@ -225,6 +225,48 @@ abstract class AppLocalizations {
   /// **'Error'**
   String get statusError;
 
+  /// No description provided for @trayConnect.
+  ///
+  /// In en, this message translates to:
+  /// **'Connect'**
+  String get trayConnect;
+
+  /// No description provided for @trayDisconnect.
+  ///
+  /// In en, this message translates to:
+  /// **'Disconnect'**
+  String get trayDisconnect;
+
+  /// No description provided for @trayShow.
+  ///
+  /// In en, this message translates to:
+  /// **'Show window'**
+  String get trayShow;
+
+  /// No description provided for @trayQuit.
+  ///
+  /// In en, this message translates to:
+  /// **'Quit'**
+  String get trayQuit;
+
+  /// No description provided for @errAdminRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'TUN mode needs administrator rights.'**
+  String get errAdminRequired;
+
+  /// No description provided for @restartAsAdmin.
+  ///
+  /// In en, this message translates to:
+  /// **'Restart as administrator'**
+  String get restartAsAdmin;
+
+  /// No description provided for @errCoreMissing.
+  ///
+  /// In en, this message translates to:
+  /// **'Core files are missing. Please reinstall the app.'**
+  String get errCoreMissing;
+
   /// No description provided for @homeTitle.
   ///
   /// In en, this message translates to:

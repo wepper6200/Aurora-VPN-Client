@@ -21,3 +21,9 @@ enum AppPlatform {
 
 /// Current platform. Overridden in tests to render either layout.
 final appPlatformProvider = Provider<AppPlatform>((ref) => AppPlatform.detect());
+
+/// Whether the native Windows shell (tray, close-to-tray, autostart) is
+/// attached. Tests render the Windows layout without those plugins.
+final desktopShellProvider = Provider<bool>(
+  (ref) => ref.watch(appPlatformProvider) == AppPlatform.windows,
+);

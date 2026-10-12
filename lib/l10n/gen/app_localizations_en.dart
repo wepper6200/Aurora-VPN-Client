@@ -76,6 +76,27 @@ class AppLocalizationsEn extends AppLocalizations {
   String get statusError => 'Error';
 
   @override
+  String get trayConnect => 'Connect';
+
+  @override
+  String get trayDisconnect => 'Disconnect';
+
+  @override
+  String get trayShow => 'Show window';
+
+  @override
+  String get trayQuit => 'Quit';
+
+  @override
+  String get errAdminRequired => 'TUN mode needs administrator rights.';
+
+  @override
+  String get restartAsAdmin => 'Restart as administrator';
+
+  @override
+  String get errCoreMissing => 'Core files are missing. Please reinstall the app.';
+
+  @override
   String get homeTitle => 'Aurora';
 
   @override

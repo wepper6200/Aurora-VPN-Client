@@ -42,6 +42,17 @@ final coreEnvironmentProvider = FutureProvider<CoreEnvironment>((ref) async {
 
 final coreConfigServiceProvider = Provider<CoreConfigService>(CoreConfigService.new);
 
+/// Hands out a local port nobody listens on (asked from the OS). Overridden in
+/// widget tests, where real sockets never complete under fake async.
+final freePortProvider = Provider<Future<int> Function()>(
+  (ref) => () async {
+    final s = await ServerSocket.bind(InternetAddress.loopbackIPv4, 0);
+    final port = s.port;
+    await s.close();
+    return port;
+  },
+);
+
 /// Turns the current server + routing + settings into a start request.
 class CoreConfigService {
   CoreConfigService(this._ref);
@@ -54,6 +65,7 @@ class CoreConfigService {
     final env = await _ref.read(coreEnvironmentProvider.future);
     final settings = _ref.read(settingsProvider);
     final platform = _ref.read(appPlatformProvider);
+    final freePort = _ref.read(freePortProvider);
     final bridge = server.outbound.requiresXray ? _newBridge() : null;
     final options = switch (platform) {
       AppPlatform.android => CoreOptions(
@@ -71,8 +83,12 @@ class CoreConfigService {
         ruleSetDir: env.ruleSetDir,
         cachePath: '${env.dataDir}/cache.db',
         xray: bridge,
+        mixedPort: await freePort(),
+        clashApiPort: await freePort(),
+        clashApiSecret: _token(24),
       ),
     };
+    final windows = platform != AppPlatform.android;
     return CoreStartRequest(
       serverId: server.id,
       label: server.name,
@@ -82,6 +98,12 @@ class CoreConfigService {
         settings: settings,
         options: options,
       ),
+      tun: options.capture == CaptureMode.tun,
+      systemProxyPort: windows && options.capture == CaptureMode.systemProxy
+          ? options.mixedPort
+          : null,
+      clashApiPort: options.clashApiPort,
+      clashApiSecret: options.clashApiSecret,
       xrayConfigJson: bridge == null
           ? null
           : XrayConfigBuilder.buildJson(
@@ -92,10 +114,12 @@ class CoreConfigService {
     );
   }
 
+  static final _rnd = Random.secure();
+
+  static String _token(int length) =>
+      List.generate(length, (_) => _rnd.nextInt(36).toRadixString(36)).join();
+
   /// Fresh port and credentials for every session.
-  static XrayBridge _newBridge() {
-    final rnd = Random.secure();
-    String token() => List.generate(16, (_) => rnd.nextInt(36).toRadixString(36)).join();
-    return XrayBridge(port: 20000 + rnd.nextInt(40000), username: token(), password: token());
-  }
+  static XrayBridge _newBridge() =>
+      XrayBridge(port: 20000 + _rnd.nextInt(40000), username: _token(16), password: _token(16));
 }

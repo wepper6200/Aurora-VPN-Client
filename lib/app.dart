@@ -13,6 +13,7 @@ import 'core/platform.dart';
 import 'data/vpn/android_vpn_controller.dart';
 import 'domain/settings/app_settings.dart';
 import 'presentation/router/app_router.dart';
+import 'presentation/shell/desktop_integration.dart';
 import 'presentation/theme/app_theme.dart';
 import 'presentation/util/import_feedback.dart';
 import 'presentation/widgets/dialogs.dart';
@@ -82,6 +83,9 @@ class _AuroraAppState extends ConsumerState<AuroraApp> {
       },
       themeAnimationDuration: const Duration(milliseconds: 350),
       locale: code == null ? null : Locale(code),
+      // Windows tray/close-to-tray glue needs localizations, so it sits inside.
+      builder: (context, child) =>
+          ref.read(desktopShellProvider) ? DesktopIntegration(child: child!) : child!,
       localizationsDelegates: AppLocalizations.localizationsDelegates,
       supportedLocales: AppLocalizations.supportedLocales,
     );

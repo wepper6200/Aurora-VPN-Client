@@ -76,6 +76,27 @@ class AppLocalizationsRu extends AppLocalizations {
   String get statusError => 'Ошибка';
 
   @override
+  String get trayConnect => 'Подключить';
+
+  @override
+  String get trayDisconnect => 'Отключить';
+
+  @override
+  String get trayShow => 'Показать окно';
+
+  @override
+  String get trayQuit => 'Выход';
+
+  @override
+  String get errAdminRequired => 'Для режима TUN нужны права администратора.';
+
+  @override
+  String get restartAsAdmin => 'Перезапустить от имени администратора';
+
+  @override
+  String get errCoreMissing => 'Не найдены файлы ядра. Переустановите приложение.';
+
+  @override
   String get homeTitle => 'Aurora';
 
   @override

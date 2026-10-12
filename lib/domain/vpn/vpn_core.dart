@@ -50,6 +50,10 @@ class CoreStartRequest {
     required this.configJson,
     this.label = '',
     this.xrayConfigJson,
+    this.tun = true,
+    this.systemProxyPort,
+    this.clashApiPort,
+    this.clashApiSecret = '',
   });
 
   final String serverId;
@@ -62,6 +66,16 @@ class CoreStartRequest {
 
   /// Xray-core config for servers that need it (sing-box forwards to it).
   final String? xrayConfigJson;
+
+  /// Captures traffic with a TUN adapter (Windows: needs administrator).
+  final bool tun;
+
+  /// Windows proxy mode: local mixed port to register as the system proxy.
+  final int? systemProxyPort;
+
+  /// Windows: Clash API used for live traffic stats.
+  final int? clashApiPort;
+  final String clashApiSecret;
 }
 
 /// Platform bridge to the sing-box core. Implemented by

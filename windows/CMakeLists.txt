@@ -106,3 +106,14 @@ install(DIRECTORY "${PROJECT_BUILD_DIR}/${FLUTTER_ASSET_DIR_NAME}"
 install(FILES "${AOT_LIBRARY}" DESTINATION "${INSTALL_BUNDLE_DATA_DIR}"
   CONFIGURATIONS Profile;Release
   COMPONENT Runtime)
+
+# VPN cores (sing-box.exe, xray.exe, wintun.dll + licenses), fetched by
+# scripts/fetch_core.ps1 into third_party/core/windows; never committed.
+set(AURORA_CORE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/../third_party/core/windows")
+if(EXISTS "${AURORA_CORE_DIR}/sing-box.exe")
+  install(DIRECTORY "${AURORA_CORE_DIR}/"
+    DESTINATION "${CMAKE_INSTALL_PREFIX}/core"
+    COMPONENT Runtime)
+else()
+  message(WARNING "VPN core not found in ${AURORA_CORE_DIR}; run scripts/fetch_core.ps1")
+endif()

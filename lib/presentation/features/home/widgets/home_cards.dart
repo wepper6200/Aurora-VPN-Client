@@ -83,6 +83,8 @@ class ConnectionCaption extends StatelessWidget {
         switch (state.error) {
           'no-server' => l10n.homeErrorNoServer,
           'permission-denied' => l10n.homeErrorPermission,
+          'admin-required' => l10n.errAdminRequired,
+          'core-missing' => l10n.errCoreMissing,
           final e => e ?? l10n.unknownError,
         },
         style: subStyle.copyWith(color: c.danger),
