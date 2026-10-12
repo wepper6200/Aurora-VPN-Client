@@ -28,9 +28,12 @@ $pins = Get-Content $pinsPath -Raw | ConvertFrom-Json
 $tmp = Join-Path ([IO.Path]::GetTempPath()) "aurora-core-$([guid]::NewGuid())"
 New-Item -ItemType Directory -Force $tmp | Out-Null
 
+# curl ships as curl.exe on Windows (where 'curl' may be an Invoke-WebRequest alias).
+$curl = if ($env:OS -eq 'Windows_NT') { 'curl.exe' } else { 'curl' }
+
 function Get-File([string] $url, [string] $out) {
   Write-Host "  GET $url"
-  & curl.exe -L --fail --retry 3 -s -o $out $url
+  & $curl -L --fail --retry 3 -s -o $out $url
   if ($LASTEXITCODE -ne 0) { throw "download failed: $url" }
 }
 
