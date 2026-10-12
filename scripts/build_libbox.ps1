@@ -1,19 +1,18 @@
 <#
 .SYNOPSIS
-  Builds libbox.aar (sing-box for Android) from the official sources with
-  gomobile and puts it into android/app/libs/. The AAR is not committed.
+  Builds android/app/libs/libbox.aar: sing-box's libbox plus our Xray-core
+  bridge (native/corebridge) in one gomobile library. Not committed.
 
 .DESCRIPTION
-  Requires Go, JDK 17 and an Android SDK with NDK (ANDROID_HOME set).
-  The sing-box version comes from scripts/core_versions.json. Only the
-  features this client uses are compiled in (no Tailscale/OpenVPN/naive),
-  which keeps the AAR several times smaller than the upstream build.
+  Requires Go, JDK 17 and an Android SDK with the NDK pinned in
+  scripts/core_versions.json (ANDROID_HOME set). Module versions come from
+  native/corebridge/go.mod (checked against core_versions.json) and are
+  verified by go.sum. Only the features this client uses are compiled in.
 
 .EXAMPLE
   . ./scripts/dev_env.ps1; ./scripts/build_libbox.ps1
 #>
 param(
-  [string] $SourceDir = $(if ($env:AURORA_TOOLS) { "$env:AURORA_TOOLS/src/sing-box" } else { 'D:/dev/src/sing-box' }),
   [string] $Targets = 'android/arm64,android/arm,android/amd64',
   [switch] $Debug
 )
@@ -28,31 +27,29 @@ function Invoke-Native([string] $What, [scriptblock] $Command) {
   try { & $Command 2>&1 | ForEach-Object { "$_" } } finally { $ErrorActionPreference = $saved }
   if ($LASTEXITCODE -ne 0) { throw "$What failed (exit $LASTEXITCODE)" }
 }
+
 $root = Split-Path -Parent $PSScriptRoot
+$module = Join-Path $root 'native/corebridge'
 $pins = Get-Content (Join-Path $PSScriptRoot 'core_versions.json') -Raw | ConvertFrom-Json
-$version = $pins.singbox
-$ndkVersion = $pins.ndk
 
 if (-not $env:ANDROID_HOME) { throw 'ANDROID_HOME is not set' }
-$ndk = Join-Path $env:ANDROID_HOME "ndk/$ndkVersion"
-if (-not (Test-Path $ndk)) { throw "NDK $ndkVersion not found at $ndk (sdkmanager `"ndk;$ndkVersion`")" }
+$ndk = Join-Path $env:ANDROID_HOME "ndk/$($pins.ndk)"
+if (-not (Test-Path $ndk)) { throw "NDK $($pins.ndk) not found at $ndk (sdkmanager `"ndk;$($pins.ndk)`")" }
 $env:ANDROID_NDK_HOME = $ndk
 
-# Sources at the pinned tag.
-if (-not (Test-Path "$SourceDir/.git")) {
-  Invoke-Native 'git clone' { git clone --quiet --depth 1 --branch "v$version" https://github.com/SagerNet/sing-box.git $SourceDir }
-} else {
-  $current = & { $ErrorActionPreference = 'Continue'; git -C $SourceDir describe --tags --exact-match 2>$null }
-  if ($current -ne "v$version") {
-    Invoke-Native 'git fetch' { git -C $SourceDir fetch --quiet --depth 1 origin "refs/tags/v$version:refs/tags/v$version" }
-    Invoke-Native 'git checkout' { git -C $SourceDir checkout --quiet "v$version" }
-  }
-}
+# sing-box's badtls/linkname code reads crypto/tls internals and is only valid
+# for the Go release upstream builds with; a newer Go crashes at the first TLS
+# connection. Go downloads and verifies the pinned toolchain itself.
+$env:GOTOOLCHAIN = "go$($pins.go)"
 
-# gomobile fork pinned by sing-box's go.mod.
-$gomobile = (Select-String -Path "$SourceDir/go.mod" -Pattern 'github.com/sagernet/gomobile (v\S+)').Matches[0].Groups[1].Value
-Push-Location $SourceDir
+Push-Location $module
 try {
+  $gomobile = (& go list -m -f '{{.Version}}' github.com/sagernet/gomobile)
+  $singbox = (& go list -m -f '{{.Version}}' github.com/sagernet/sing-box)
+  $xray = (& go list -m -f '{{.Version}}' github.com/xtls/xray-core)
+  if ($singbox -ne "v$($pins.singbox)") { throw "go.mod has sing-box $singbox, core_versions.json says $($pins.singbox)" }
+  if ($xray -ne $pins.xray_module) { throw "go.mod has xray-core $xray, core_versions.json says $($pins.xray_module)" }
+
   Invoke-Native 'go install gobind' { go install "github.com/sagernet/gomobile/cmd/gobind@$gomobile" }
   $gobin = Join-Path (go env GOPATH) 'bin'
   $env:PATH = "$gobin;$env:PATH"
@@ -61,7 +58,7 @@ try {
   # environ() skips them in the inherited list but not in the child's list.
   # Build it from a patched copy that treats both lists the same way.
   Invoke-Native 'go mod download gomobile' { go mod download "github.com/sagernet/gomobile@$gomobile" }
-  $modDir = (& go list -m -f '{{.Dir}}' "github.com/sagernet/gomobile@$gomobile")
+  $modDir = (& go list -m -f '{{.Dir}}' github.com/sagernet/gomobile)
   $patched = Join-Path ([IO.Path]::GetTempPath()) "aurora-gomobile-$gomobile"
   Remove-Item -Recurse -Force $patched -ErrorAction SilentlyContinue
   Copy-Item -Recurse $modDir $patched
@@ -77,19 +74,22 @@ try {
   finally { Pop-Location }
 
   $tags = 'with_gvisor,with_quic,with_wireguard,with_utls,with_clash_api,badlinkname,tfogo_checklinkname0'
-  $ldflags = "-X github.com/sagernet/sing-box/constant.Version=$version -X runtime.godebugDefault=multipathtcp=0,tlssha1=1 -checklinkname=0"
+  $ldflags = "-X github.com/sagernet/sing-box/constant.Version=$($pins.singbox) -X runtime.godebugDefault=multipathtcp=0,tlssha1=1 -checklinkname=0"
   if (-not $Debug) { $ldflags += ' -s -w -buildid=' }
 
-  Write-Host "gomobile bind sing-box $version ($Targets)"
+  Remove-Item -Recurse -Force (Join-Path $module 'build') -ErrorAction SilentlyContinue
+  Write-Host "gomobile bind: sing-box $singbox + xray-core $xray ($Targets)"
   # Every flag is quoted: Windows PowerShell splits unquoted '-x=a.b' at the dot.
   Invoke-Native 'gomobile bind' { gomobile bind '-v' '-o' 'libbox.aar' '-target' $Targets '-androidapi' '24' `
     '-javapkg=io.nekohasekai' '-libname=box' '-trimpath' '-buildvcs=false' `
-    '-ldflags' $ldflags '-tags' $tags './experimental/libbox' }
+    '-ldflags' $ldflags '-tags' $tags `
+    'github.com/sagernet/sing-box/experimental/libbox' './xraybridge' }
 
   $dest = Join-Path $root 'android/app/libs'
   New-Item -ItemType Directory -Force $dest | Out-Null
-  Copy-Item libbox.aar (Join-Path $dest 'libbox.aar') -Force
-  Write-Host "libbox.aar -> $dest ($([math]::Round((Get-Item libbox.aar).Length / 1MB, 1)) MB)"
+  Move-Item libbox.aar (Join-Path $dest 'libbox.aar') -Force
+  Remove-Item -Force libbox-sources.jar -ErrorAction SilentlyContinue
+  Write-Host "libbox.aar -> $dest ($([math]::Round((Get-Item (Join-Path $dest 'libbox.aar')).Length / 1MB, 1)) MB)"
 } finally {
   Pop-Location
 }

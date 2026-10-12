@@ -65,3 +65,6 @@ test/**/failures/
 # Packaging output
 /dist/
 /assets/rules/*.srs
+/native/corebridge/build/
+/native/corebridge/*.aar
+/native/corebridge/*.jar

@@ -354,6 +354,32 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String get subErrClientNotSupported =>
+      'The provider doesn\'t allow this app to use the subscription. Ask their support which apps are supported.';
+
+  @override
+  String subErrProviderSays(String text) {
+    return 'Provider\'s message: “$text”';
+  }
+
+  @override
+  String get subErrHtml => 'The link opened a web page instead of a subscription. Check the link.';
+
+  @override
+  String get subErrFormat => 'The subscription format wasn\'t recognized.';
+
+  @override
+  String get subErrNetwork => 'Can\'t reach the subscription server.';
+
+  @override
+  String subErrHttp(String code) {
+    return 'The subscription server returned an error ($code).';
+  }
+
+  @override
+  String get subErrTooLarge => 'The subscription is too large.';
+
+  @override
   String get subUpdated => 'Subscription updated';
 
   @override

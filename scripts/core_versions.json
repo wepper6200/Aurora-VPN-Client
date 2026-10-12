@@ -1,4 +1,4 @@
-{
+﻿{
     "singbox":  "1.14.3",
     "wintun":  "0.14.1",
     "geoip_commit":  "7fe82a879ad2666526730c195b55a6d8d9147908",
@@ -8,7 +8,11 @@
                    "wintun-0.14.1.zip":  "07c256185d6ee3652e09fa55c0b673e2624b565e02c4b9091c79ca7d2f24ef51",
                    "geoip-ru.srs":  "6e23f5580dd443e2f9c4895adafee8d199c1a3487182ad5f0a2256cf59c7e53a",
                    "geosite-category-ads-all.srs":  "84e2ed79617a492cb1adaf28bf0c59a1a42af854ab935605ba84e0deba386c88",
-                   "geosite-category-ru.srs":  "546c841723df674071987a90e321ad8c5f0e9ce0fc0ee460c258f547d3086857"
+                   "geosite-category-ru.srs":  "546c841723df674071987a90e321ad8c5f0e9ce0fc0ee460c258f547d3086857",
+                   "Xray-26.3.27-windows-64.zip":  "d004c39288ce9ada487c6f398c7c545f7d749e44bdfdd59dbc9f865afba4e1ad"
                },
-    "ndk":  "28.2.13676358"
+    "ndk":  "28.2.13676358",
+    "xray":  "26.3.27",
+    "xray_module":  "v1.260327.0",
+    "go":  "1.26.8"
 }

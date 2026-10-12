@@ -65,12 +65,8 @@ abstract final class LinkParser {
         port: p.port,
         uuid: uuid,
         flow: q['flow'] ?? '',
-        transport: _transport(
-          q['type'],
-          path: q['path'],
-          host: q['host'],
-          service: q['serviceName'],
-        ),
+        transport: _transportFromQuery(q),
+
         tls: _tls(security, q),
       ),
     );
@@ -88,12 +84,8 @@ abstract final class LinkParser {
         host: p.host,
         port: p.port,
         password: p.userInfo,
-        transport: _transport(
-          q['type'],
-          path: q['path'],
-          host: q['host'],
-          service: q['serviceName'],
-        ),
+        transport: _transportFromQuery(q),
+
         tls: _tls(security, q),
       ),
     );
@@ -135,6 +127,7 @@ abstract final class LinkParser {
           path: isGrpc ? null : j['path'],
           host: j['host'],
           service: isGrpc ? j['path'] : null,
+          mode: j['mode'],
         ),
         tls: _tls(tlsMode == 'tls' || tlsMode == 'reality' ? tlsMode : 'none', {
           'sni': j['sni'] ?? '',
@@ -297,10 +290,46 @@ abstract final class LinkParser {
 
   // --- shared pieces -------------------------------------------------------
 
-  static TransportConfig _transport(String? type, {String? path, String? host, String? service}) {
+  static TransportConfig _transport(
+    String? type, {
+    String? path,
+    String? host,
+    String? service,
+    String? mode,
+    String? extra,
+  }) {
     final t = TransportType.parse(type);
-    if (t == null) throw LinkParseException('transport "$type" is not supported by sing-box');
-    return TransportConfig(type: t, path: path ?? '', host: host ?? '', serviceName: service ?? '');
+    if (t == null) throw LinkParseException('transport "$type" is not supported');
+    final isXhttp = t == TransportType.xhttp;
+    return TransportConfig(
+      type: t,
+      path: path ?? '',
+      host: host ?? '',
+      serviceName: service ?? '',
+      mode: isXhttp ? mode ?? '' : '',
+      extra: isXhttp ? _jsonOrEmpty(extra) : '',
+    );
+  }
+
+  /// Standard share-link transport params (`type`, `path`, `host`,
+  /// `serviceName`, and for XHTTP `mode` + JSON `extra`).
+  static TransportConfig _transportFromQuery(Map<String, String> q) => _transport(
+    q['type'],
+    path: q['path'],
+    host: q['host'],
+    service: q['serviceName'],
+    mode: q['mode'],
+    extra: q['extra'],
+  );
+
+  /// Keeps `extra` only if it is a JSON object (it is passed to Xray verbatim).
+  static String _jsonOrEmpty(String? s) {
+    if (s == null || s.trim().isEmpty) return '';
+    try {
+      return jsonDecode(s) is Map ? s.trim() : '';
+    } on FormatException {
+      throw const LinkParseException('xhttp: "extra" is not valid JSON');
+    }
   }
 
   static TlsConfig _tls(String security, Map<String, String> q) {

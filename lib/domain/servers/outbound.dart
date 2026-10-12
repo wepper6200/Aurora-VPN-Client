@@ -6,7 +6,10 @@ enum TransportType {
   ws,
   grpc,
   h2,
-  httpupgrade;
+  httpupgrade,
+
+  /// Xray's XHTTP (SplitHTTP); runs through Xray-core, not sing-box.
+  xhttp;
 
   static TransportType? parse(String? s) => switch (s?.toLowerCase()) {
     null || '' || 'tcp' || 'raw' || 'none' => tcp,
@@ -14,7 +17,8 @@ enum TransportType {
     'grpc' || 'gun' => grpc,
     'h2' || 'http' => h2,
     'httpupgrade' => httpupgrade,
-    _ => null, // xhttp, kcp, quic… are not supported by sing-box
+    'xhttp' || 'splithttp' => xhttp,
+    _ => null, // kcp, quic… are not supported
   };
 }
 
@@ -24,22 +28,32 @@ class TransportConfig {
     this.path = '',
     this.host = '',
     this.serviceName = '',
+    this.mode = '',
+    this.extra = '',
   });
 
   final TransportType type;
   final String path;
 
-  /// Host header (ws/httpupgrade) or authority (h2).
+  /// Host header (ws/httpupgrade/xhttp) or authority (h2).
   final String host;
 
   /// gRPC service name.
   final String serviceName;
+
+  /// XHTTP mode: auto, packet-up, stream-up, stream-one.
+  final String mode;
+
+  /// XHTTP `extra` object as raw JSON (padding, xmux, downloadSettings…).
+  final String extra;
 
   Map<String, Object?> toJson() => {
     'type': type.name,
     if (path.isNotEmpty) 'path': path,
     if (host.isNotEmpty) 'host': host,
     if (serviceName.isNotEmpty) 'serviceName': serviceName,
+    if (mode.isNotEmpty) 'mode': mode,
+    if (extra.isNotEmpty) 'extra': extra,
   };
 
   factory TransportConfig.fromJson(Map<String, Object?> j) => TransportConfig(
@@ -47,6 +61,8 @@ class TransportConfig {
     path: j['path'] as String? ?? '',
     host: j['host'] as String? ?? '',
     serviceName: j['serviceName'] as String? ?? '',
+    mode: j['mode'] as String? ?? '',
+    extra: j['extra'] as String? ?? '',
   );
 
   @override
@@ -55,10 +71,12 @@ class TransportConfig {
       other.type == type &&
       other.path == path &&
       other.host == host &&
-      other.serviceName == serviceName;
+      other.serviceName == serviceName &&
+      other.mode == mode &&
+      other.extra == extra;
 
   @override
-  int get hashCode => Object.hash(type, path, host, serviceName);
+  int get hashCode => Object.hash(type, path, host, serviceName, mode, extra);
 }
 
 enum TlsMode { none, tls, reality }
@@ -158,6 +176,7 @@ class OutboundConfig {
     this.localAddresses = const [],
     this.reserved = const [],
     this.mtu = 0,
+    this.xrayOutbound = '',
   });
 
   final ProxyProtocol protocol;
@@ -198,6 +217,14 @@ class OutboundConfig {
   final List<String> localAddresses;
   final List<int> reserved;
   final int mtu;
+
+  /// Original Xray outbound JSON for servers imported from Xray configs that
+  /// use features only Xray-core has. Passed to Xray verbatim so nothing is
+  /// lost in translation; empty for everything else.
+  final String xrayOutbound;
+
+  /// Runs through Xray-core (behind sing-box) instead of sing-box itself.
+  bool get requiresXray => xrayOutbound.isNotEmpty || transport.type == TransportType.xhttp;
 
   /// Short transport label for the UI.
   String get transportLabel => switch (protocol) {
@@ -242,6 +269,7 @@ class OutboundConfig {
       localAddresses: localAddresses,
       reserved: reserved,
       mtu: mtu,
+      xrayOutbound: xrayOutbound,
     );
   }
 
@@ -268,6 +296,7 @@ class OutboundConfig {
     if (localAddresses.isNotEmpty) 'localAddresses': localAddresses,
     if (reserved.isNotEmpty) 'reserved': reserved,
     if (mtu != 0) 'mtu': mtu,
+    if (xrayOutbound.isNotEmpty) 'xray': xrayOutbound,
   };
 
   factory OutboundConfig.fromJson(Map<String, Object?> j) => OutboundConfig(
@@ -297,6 +326,7 @@ class OutboundConfig {
     localAddresses: (j['localAddresses'] as List<Object?>? ?? const []).cast<String>(),
     reserved: (j['reserved'] as List<Object?>? ?? const []).cast<int>(),
     mtu: j['mtu'] as int? ?? 0,
+    xrayOutbound: j['xray'] as String? ?? '',
   );
 
   @override

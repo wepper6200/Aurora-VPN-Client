@@ -148,6 +148,14 @@ abstract final class ClashYamlParser {
       case TransportType.httpupgrade:
         final o = opts('http-upgrade-opts');
         return TransportConfig(type: type, path: '${o['path'] ?? ''}', host: '${o['host'] ?? ''}');
+      case TransportType.xhttp:
+        final o = opts('xhttp-opts');
+        return TransportConfig(
+          type: type,
+          path: '${o['path'] ?? ''}',
+          host: '${o['host'] ?? ''}',
+          mode: '${o['mode'] ?? ''}',
+        );
       case TransportType.tcp:
         return const TransportConfig();
     }

@@ -22,6 +22,9 @@ class CoreOptions {
     this.clashApiPort,
     this.clashApiSecret = '',
     this.cachePath,
+    this.xray,
+    this.selfPackage,
+    this.xrayProcessName = 'xray.exe',
   });
 
   final CaptureMode capture;
@@ -37,6 +40,27 @@ class CoreOptions {
   final int? clashApiPort;
   final String clashApiSecret;
   final String? cachePath;
+
+  /// Local hop to Xray-core; required when the server needs Xray.
+  final XrayBridge? xray;
+
+  /// Android: our own package, excluded from the TUN when Xray dials out so
+  /// its connections don't loop back into the tunnel.
+  final String? selfPackage;
+
+  /// Windows: the Xray process, routed direct for the same reason.
+  final String xrayProcessName;
+}
+
+/// Authenticated SOCKS5 hop from sing-box to Xray-core on 127.0.0.1.
+/// Port and credentials are random per session so other local apps can
+/// neither find nor use it.
+class XrayBridge {
+  const XrayBridge({required this.port, required this.username, required this.password});
+
+  final int port;
+  final String username;
+  final String password;
 }
 
 /// Rule sets shipped with the app (downloaded by scripts/fetch_core.*).
@@ -76,13 +100,28 @@ abstract final class SingBoxConfigBuilder {
       if (rules && routing.ruDirect) ...[RuleSets.geoipRu, RuleSets.geositeRu],
       if (rules && routing.blockAds) RuleSets.geositeAds,
     };
-    final isWireGuard = server.protocol == ProxyProtocol.wireguard;
-    final proxy = outbound(server.outbound);
+    final viaXray = server.outbound.requiresXray;
+    final bridge = options.xray;
+    if (viaXray && bridge == null) {
+      throw ArgumentError('server ${server.id} needs Xray-core but no bridge was given');
+    }
+    final isWireGuard = !viaXray && server.protocol == ProxyProtocol.wireguard;
+    final proxy = viaXray
+        ? {
+            'type': 'socks',
+            'tag': proxyTag,
+            'server': '127.0.0.1',
+            'server_port': bridge!.port,
+            'version': '5',
+            'username': bridge.username,
+            'password': bridge.password,
+          }
+        : outbound(server.outbound);
 
     return {
       'log': {'level': settings.logLevel.name, 'timestamp': true},
       'dns': _dns(routing, settings),
-      'inbounds': [_inbound(routing, settings, options)],
+      'inbounds': [_inbound(routing, settings, options, excludeSelf: viaXray)],
       if (isWireGuard) 'endpoints': [proxy],
       'outbounds': [
         if (!isWireGuard) proxy,
@@ -92,6 +131,11 @@ abstract final class SingBoxConfigBuilder {
         'rules': [
           {'action': 'sniff'},
           {'protocol': 'dns', 'action': 'hijack-dns'},
+          if (viaXray && !options.android && options.capture == CaptureMode.tun)
+            {
+              'process_name': [options.xrayProcessName],
+              'outbound': directTag,
+            },
           // Without IPv6 the tunnel still captures v6 so it can't leak around it.
           if (!settings.ipv6) {'ip_version': 6, 'action': 'reject'},
           if (rules && routing.bypassLan) {'ip_is_private': true, 'outbound': directTag},
@@ -196,8 +240,9 @@ abstract final class SingBoxConfigBuilder {
   static Map<String, Object?> _inbound(
     RoutingSettings routing,
     AppSettings settings,
-    CoreOptions options,
-  ) {
+    CoreOptions options, {
+    bool excludeSelf = false,
+  }) {
     if (options.capture == CaptureMode.systemProxy) {
       return {
         'type': 'mixed',
@@ -209,7 +254,14 @@ abstract final class SingBoxConfigBuilder {
     }
     final split =
         options.android && routing.splitMode != SplitTunnelMode.off && routing.splitApps.isNotEmpty;
-    final apps = routing.splitApps.toList()..sort();
+    final include = split && routing.splitMode == SplitTunnelMode.include;
+    final self = options.selfPackage;
+    // An include list already leaves our app out; otherwise exclude it so
+    // Xray's own connections bypass the tunnel.
+    final apps = {
+      if (split) ...routing.splitApps,
+      if (options.android && excludeSelf && !include && self != null) self,
+    }.toList()..sort();
     return {
       'type': 'tun',
       'tag': tunTag,
@@ -220,8 +272,8 @@ abstract final class SingBoxConfigBuilder {
       // Android: the VpnService owns routing. Windows: strict route is the kill switch.
       'strict_route': options.android || settings.killSwitch,
       'stack': 'mixed',
-      if (split && routing.splitMode == SplitTunnelMode.include) 'include_package': apps,
-      if (split && routing.splitMode == SplitTunnelMode.exclude) 'exclude_package': apps,
+      if (include) 'include_package': apps,
+      if (!include && apps.isNotEmpty) 'exclude_package': apps,
     };
   }
 
@@ -361,6 +413,9 @@ abstract final class SingBoxConfigBuilder {
           if (t.host.isNotEmpty) 'host': t.host,
           'path': t.path.isEmpty ? '/' : t.path,
         };
+      case TransportType.xhttp:
+        // XHTTP servers are routed to Xray through a SOCKS bridge (see build()).
+        throw StateError('XHTTP is not a sing-box transport');
       case TransportType.tcp:
         return const {};
     }

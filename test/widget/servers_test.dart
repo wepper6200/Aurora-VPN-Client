@@ -159,7 +159,7 @@ void main() {
     await tester.tap(find.text('Save'));
     await tester.pumpAndSettle();
 
-    expect(find.text("Couldn't load the subscription: HTTP 404"), findsOneWidget);
+    expect(find.text('The subscription server returned an error (404).'), findsOneWidget);
     expect(find.text('New subscription'), findsOneWidget);
   });
 }

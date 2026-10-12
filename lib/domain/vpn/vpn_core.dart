@@ -45,7 +45,12 @@ class TrafficSample {
 
 /// Everything the core needs to bring the tunnel up.
 class CoreStartRequest {
-  const CoreStartRequest({required this.serverId, required this.configJson, this.label = ''});
+  const CoreStartRequest({
+    required this.serverId,
+    required this.configJson,
+    this.label = '',
+    this.xrayConfigJson,
+  });
 
   final String serverId;
 
@@ -54,6 +59,9 @@ class CoreStartRequest {
 
   /// Complete sing-box configuration.
   final String configJson;
+
+  /// Xray-core config for servers that need it (sing-box forwards to it).
+  final String? xrayConfigJson;
 }
 
 /// Platform bridge to the sing-box core. Implemented by

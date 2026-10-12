@@ -11,6 +11,7 @@ import '../../../data/subscriptions/subscription_fetcher.dart';
 import '../../../domain/subscriptions/subscription.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/tokens.dart';
+import '../../util/subscription_errors.dart';
 import '../../widgets/app_buttons.dart';
 import '../../widgets/form_section.dart';
 import '../../widgets/page_scaffold.dart';
@@ -105,7 +106,7 @@ class _SubscriptionEditorPageState extends ConsumerState<SubscriptionEditorPage>
       if (mounted) {
         setState(() {
           _saving = false;
-          _error = context.l10n.subFetchError(e.message);
+          _error = subscriptionErrorText(context.l10n, e);
         });
       }
     }

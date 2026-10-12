@@ -59,12 +59,18 @@ object VpnHub {
 
     private fun configFile(context: Context) = File(context.filesDir, "active-config.json")
     private fun labelFile(context: Context) = File(context.filesDir, "active-label.txt")
+    private fun xrayFile(context: Context) = File(context.filesDir, "active-xray.json")
 
     /** Stores the config so Always-on VPN can restart without the UI. */
-    fun saveRequest(context: Context, config: String, label: String) {
+    fun saveRequest(context: Context, config: String, label: String, xray: String?) {
         configFile(context).writeText(config)
         labelFile(context).writeText(label)
+        if (xray.isNullOrBlank()) xrayFile(context).delete() else xrayFile(context).writeText(xray)
     }
+
+    /** Xray-core config for servers that need it; null for sing-box-only servers. */
+    fun loadXray(context: Context): String? =
+        xrayFile(context).takeIf { it.exists() }?.readText()?.takeIf { it.isNotBlank() }
 
     fun loadConfig(context: Context): String? =
         configFile(context).takeIf { it.exists() }?.readText()?.takeIf { it.isNotBlank() }

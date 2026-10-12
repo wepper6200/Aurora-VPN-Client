@@ -53,6 +53,8 @@ abstract final class LinkSerializer {
     'path': t.path,
     'host': t.host,
     'serviceName': t.serviceName,
+    'mode': t.mode,
+    'extra': t.extra,
   };
 
   static Map<String, String> _tlsQuery(TlsConfig t) => {

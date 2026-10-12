@@ -48,6 +48,7 @@ import io.nekohasekai.libbox.StringIterator
 import io.nekohasekai.libbox.SystemProxyStatus
 import io.nekohasekai.libbox.TunOptions
 import io.nekohasekai.libbox.WIFIState
+import io.nekohasekai.xraybridge.Xraybridge
 import java.net.Inet6Address
 import java.net.InetSocketAddress
 import java.net.NetworkInterface
@@ -160,6 +161,8 @@ class AuroraVpnService : VpnService(), PlatformInterface, CommandServerHandler {
         }
         try {
             setupLibbox(this)
+            // Xray first: sing-box's SOCKS bridge must have someone to talk to.
+            VpnHub.loadXray(this)?.let { Xraybridge.start(it) }
             monitor.start()
             val server = commandServer ?: CommandServer(this, this).also {
                 it.start()
@@ -187,6 +190,7 @@ class AuroraVpnService : VpnService(), PlatformInterface, CommandServerHandler {
             runCatching { server.close() }
         }
         commandServer = null
+        runCatching { Xraybridge.stop() }.onFailure { Log.w(TAG, "xray stop", it) }
         monitor.stop()
         VpnHub.setStatus(VpnStatus.STOPPED, error)
         ServiceCompat.stopForeground(this, ServiceCompat.STOP_FOREGROUND_REMOVE)

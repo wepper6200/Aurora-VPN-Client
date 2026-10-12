@@ -101,6 +101,7 @@ class AndroidVpnController implements VpnCoreController {
     await _methods.invokeMethod<void>('start', {
       'config': request.configJson,
       'label': request.label,
+      'xray': request.xrayConfigJson,
     });
   }
 

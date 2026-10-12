@@ -639,6 +639,48 @@ abstract class AppLocalizations {
   /// **'Couldn\'t load the subscription: {reason}'**
   String subFetchError(String reason);
 
+  /// No description provided for @subErrClientNotSupported.
+  ///
+  /// In en, this message translates to:
+  /// **'The provider doesn\'t allow this app to use the subscription. Ask their support which apps are supported.'**
+  String get subErrClientNotSupported;
+
+  /// No description provided for @subErrProviderSays.
+  ///
+  /// In en, this message translates to:
+  /// **'Provider\'s message: “{text}”'**
+  String subErrProviderSays(String text);
+
+  /// No description provided for @subErrHtml.
+  ///
+  /// In en, this message translates to:
+  /// **'The link opened a web page instead of a subscription. Check the link.'**
+  String get subErrHtml;
+
+  /// No description provided for @subErrFormat.
+  ///
+  /// In en, this message translates to:
+  /// **'The subscription format wasn\'t recognized.'**
+  String get subErrFormat;
+
+  /// No description provided for @subErrNetwork.
+  ///
+  /// In en, this message translates to:
+  /// **'Can\'t reach the subscription server.'**
+  String get subErrNetwork;
+
+  /// No description provided for @subErrHttp.
+  ///
+  /// In en, this message translates to:
+  /// **'The subscription server returned an error ({code}).'**
+  String subErrHttp(String code);
+
+  /// No description provided for @subErrTooLarge.
+  ///
+  /// In en, this message translates to:
+  /// **'The subscription is too large.'**
+  String get subErrTooLarge;
+
   /// No description provided for @subUpdated.
   ///
   /// In en, this message translates to:

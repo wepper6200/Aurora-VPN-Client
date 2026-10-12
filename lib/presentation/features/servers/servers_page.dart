@@ -12,6 +12,7 @@ import '../../../domain/subscriptions/subscription.dart';
 import '../../router/app_router.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/tokens.dart';
+import '../../util/subscription_errors.dart';
 import '../../widgets/app_buttons.dart';
 import '../../widgets/app_card.dart';
 import '../../widgets/decorations.dart';
@@ -93,7 +94,7 @@ class _ServersPageState extends ConsumerState<ServersPage> {
           await actions.refreshSubscription(sub);
           if (mounted) showToast(context, l10n.subUpdated);
         } on SubscriptionFetchException catch (e) {
-          if (mounted) showToast(context, l10n.subFetchError(e.message), error: true);
+          if (mounted) showToast(context, subscriptionErrorText(l10n, e), error: true);
         } finally {
           if (mounted) setState(() => _updating.remove(sub.id));
         }

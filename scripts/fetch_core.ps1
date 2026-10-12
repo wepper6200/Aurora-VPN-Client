@@ -69,6 +69,21 @@ try {
       Copy-Item "$tmp/wintun/wintun/bin/amd64/wintun.dll" "$dest/wintun.dll" -Force
       Copy-Item "$tmp/wintun/wintun/LICENSE.txt" "$dest/LICENSE.wintun.txt" -Force
     }
+    $x = $pins.xray
+    if ($Force -or -not (Test-Path "$dest/xray.exe")) {
+      Write-Host "Xray-core $x (windows-64)"
+      $zip = Join-Path $tmp 'xray.zip'
+      $base = "https://github.com/XTLS/Xray-core/releases/download/v$x/Xray-windows-64.zip"
+      Get-File $base $zip
+      # Xray publishes SHA2-256 digests next to each asset; check those too.
+      Get-File "$base.dgst" "$zip.dgst"
+      $published = (Select-String -Path "$zip.dgst" -Pattern 'SHA2-256=\s*([0-9a-f]{64})').Matches[0].Groups[1].Value
+      if ($published -ne (Get-FileHash $zip -Algorithm SHA256).Hash.ToLower()) { throw 'Xray-core digest mismatch' }
+      Confirm-Hash $zip "Xray-$x-windows-64.zip"
+      Expand-Archive $zip -DestinationPath "$tmp/xray" -Force
+      Copy-Item "$tmp/xray/xray.exe" "$dest/xray.exe" -Force
+      Copy-Item "$tmp/xray/LICENSE" "$dest/LICENSE.xray" -Force -ErrorAction SilentlyContinue
+    }
   }
 
   if ($Only -in 'all', 'rules') {

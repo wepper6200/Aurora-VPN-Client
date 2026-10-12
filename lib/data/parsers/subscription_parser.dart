@@ -7,21 +7,24 @@ import 'clash_yaml_parser.dart';
 import 'import_item.dart';
 import 'link_parser.dart';
 import 'singbox_json_parser.dart';
+import 'xray_json_parser.dart';
 
 /// Detects the format of subscription bodies / pasted text and extracts
 /// every importable item.
 ///
-/// Supported: base64 link lists, plain link lists, sing-box JSON, Clash YAML,
+/// Supported: base64 link lists, plain link lists, Xray JSON, sing-box JSON, Clash YAML,
 /// a single http(s) URL (as a subscription).
 abstract final class SubscriptionParser {
   static ParseOutcome parse(String text) {
-    final body = text.trim().replaceFirst('﻿', '');
+    final body = text.trim().replaceFirst('\uFEFF', '');
     if (body.isEmpty) return const ParseOutcome();
 
-    // sing-box JSON
-    if (body.startsWith('{')) {
+    // JSON: Xray (array of configs or one config; outbounds use "protocol")
+    // or sing-box (outbounds use "type").
+    if (body.startsWith('{') || body.startsWith('[')) {
       try {
         final json = jsonDecode(body);
+        if (XrayJsonParser.looksLikeXray(json)) return XrayJsonParser.parse(json);
         if (json is Map && (json.containsKey('outbounds') || json.containsKey('endpoints'))) {
           return SingBoxJsonParser.parse(json.cast<String, Object?>());
         }
@@ -57,7 +60,7 @@ abstract final class SubscriptionParser {
     final items = <ImportItem>[];
     final failures = <LinkParseException>[];
     for (final raw in const LineSplitter().convert(text)) {
-      final line = raw.trim();
+      final line = raw.replaceAll('\uFEFF', '').trim();
       if (line.isEmpty) continue;
       if (LinkParser.looksLikeLink(line)) {
         try {

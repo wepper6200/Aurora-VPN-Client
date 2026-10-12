@@ -88,8 +88,8 @@ void main() {
 
     test('unsupported transport and missing reality key are rejected', () {
       expect(
-        () => LinkParser.parse('vless://$uuid@a.example.com:443?type=xhttp&security=tls'),
-        throwsA(isA<LinkParseException>().having((e) => e.reason, 'reason', contains('xhttp'))),
+        () => LinkParser.parse('vless://$uuid@a.example.com:443?type=kcp&security=tls'),
+        throwsA(isA<LinkParseException>().having((e) => e.reason, 'reason', contains('kcp'))),
       );
       expect(
         () => LinkParser.parse('vless://$uuid@a.example.com:443?security=reality'),

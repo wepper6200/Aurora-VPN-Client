@@ -12,7 +12,7 @@ final linkList = [
   'vless://$uuid@nl.example.com:443?security=reality&pbk=cHViS2V5&sid=01&sni=www.example.org&fp=chrome&flow=xtls-rprx-vision#NL',
   'trojan://pw@de.example.com:443?type=ws&path=%2Ft#DE',
   'hysteria2://pw@fi.example.com:443?sni=fi.example.com#FI',
-  'vless://$uuid@bad.example.com:443?type=xhttp&security=tls#Broken',
+  'vless://$uuid@bad.example.com:443?type=kcp&security=tls#Broken',
 ].join('\r\n');
 
 const singBoxJson =
@@ -107,7 +107,7 @@ void main() {
     final r = SubscriptionParser.parse(linkList);
     expect(r.servers.map((s) => s.name), ['NL', 'DE', 'FI']);
     expect(r.failures, hasLength(1));
-    expect(r.failures.single.reason, contains('xhttp'));
+    expect(r.failures.single.reason, contains('kcp'));
   });
 
   test('base64-encoded link list, with line breaks inside the base64', () {

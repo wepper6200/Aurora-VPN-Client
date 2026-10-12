@@ -56,7 +56,12 @@ class VpnChannel(private val activity: Activity, messenger: BinaryMessenger) :
                     result.error("ARGS", "config is required", null)
                     return
                 }
-                VpnHub.saveRequest(activity, config, call.argument<String>("label").orEmpty())
+                VpnHub.saveRequest(
+                    activity,
+                    config,
+                    call.argument<String>("label").orEmpty(),
+                    call.argument<String>("xray"),
+                )
                 AuroraVpnService.start(activity)
                 result.success(null)
             }

@@ -361,6 +361,32 @@ class AppLocalizationsRu extends AppLocalizations {
   }
 
   @override
+  String get subErrClientNotSupported =>
+      'Сервис не разрешает пользоваться подпиской из этого приложения. Уточните в поддержке сервиса, какие приложения поддерживаются.';
+
+  @override
+  String subErrProviderSays(String text) {
+    return 'Сообщение сервиса: «$text»';
+  }
+
+  @override
+  String get subErrHtml => 'По ссылке открылась веб-страница, а не подписка. Проверьте ссылку.';
+
+  @override
+  String get subErrFormat => 'Не удалось распознать формат подписки.';
+
+  @override
+  String get subErrNetwork => 'Нет связи с сервером подписки.';
+
+  @override
+  String subErrHttp(String code) {
+    return 'Сервер подписки ответил ошибкой ($code).';
+  }
+
+  @override
+  String get subErrTooLarge => 'Подписка слишком большая.';
+
+  @override
   String get subUpdated => 'Подписка обновлена';
 
   @override
