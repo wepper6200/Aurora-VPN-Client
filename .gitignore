@@ -64,3 +64,4 @@ test/**/failures/
 
 # Packaging output
 /dist/
+/assets/rules/*.srs

@@ -6,6 +6,7 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../../application/servers/servers_controller.dart';
 import '../../../core/l10n.dart';
+import '../../../data/subscriptions/subscription_fetcher.dart';
 import '../../../domain/servers/server_profile.dart';
 import '../../../domain/subscriptions/subscription.dart';
 import '../../router/app_router.dart';
@@ -90,6 +91,9 @@ class _ServersPageState extends ConsumerState<ServersPage> {
         setState(() => _updating.add(sub.id));
         try {
           await actions.refreshSubscription(sub);
+          if (mounted) showToast(context, l10n.subUpdated);
+        } on SubscriptionFetchException catch (e) {
+          if (mounted) showToast(context, l10n.subFetchError(e.message), error: true);
         } finally {
           if (mounted) setState(() => _updating.remove(sub.id));
         }
@@ -114,8 +118,7 @@ class _ServersPageState extends ConsumerState<ServersPage> {
       case ServerMenuAction.edit:
         context.go('${AppRoutes.servers}/server/${s.id}');
       case ServerMenuAction.copyLink:
-        // Stage 3 serializes the profile back to its share link.
-        await Clipboard.setData(ClipboardData(text: '${s.protocol.name}://${s.host}:${s.port}'));
+        await Clipboard.setData(ClipboardData(text: ref.read(serverActionsProvider).shareLink(s)));
         if (mounted) showToast(context, l10n.copied);
       case ServerMenuAction.delete:
         final ok = await confirmDelete(
@@ -129,7 +132,7 @@ class _ServersPageState extends ConsumerState<ServersPage> {
 
   void _testAll() {
     final servers = ref.read(serversProvider).value ?? const [];
-    ref.read(latencyProvider.notifier).test(servers.map((s) => s.id));
+    ref.read(latencyProvider.notifier).test(servers);
   }
 
   @override

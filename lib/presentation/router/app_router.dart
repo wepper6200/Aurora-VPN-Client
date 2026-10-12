@@ -31,11 +31,12 @@ abstract final class AppRoutes {
   static const designSystem = '/settings/design-system';
 }
 
-final _rootKey = GlobalKey<NavigatorState>(debugLabel: 'root');
+/// Root navigator; its context hosts app-wide toasts (e.g. deep-link imports).
+final rootNavigatorKey = GlobalKey<NavigatorState>(debugLabel: 'root');
 
 final routerProvider = Provider<GoRouter>((ref) {
   final router = GoRouter(
-    navigatorKey: _rootKey,
+    navigatorKey: rootNavigatorKey,
     initialLocation: AppRoutes.home,
     redirect: (context, state) {
       // Read (not watch): the router must not be rebuilt on settings changes.

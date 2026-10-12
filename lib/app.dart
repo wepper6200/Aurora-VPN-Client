@@ -1,22 +1,54 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import 'application/di.dart';
 import 'application/logs/logs_controller.dart';
 import 'application/settings/settings_controller.dart';
+import 'application/subscriptions/subscription_service.dart';
 import 'core/l10n.dart';
 import 'domain/settings/app_settings.dart';
 import 'presentation/router/app_router.dart';
 import 'presentation/theme/app_theme.dart';
+import 'presentation/util/import_feedback.dart';
 
-class AuroraApp extends ConsumerWidget {
+class AuroraApp extends ConsumerStatefulWidget {
   const AuroraApp({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<AuroraApp> createState() => _AuroraAppState();
+}
+
+class _AuroraAppState extends ConsumerState<AuroraApp> {
+  StreamSubscription<Uri>? _links;
+
+  @override
+  void initState() {
+    super.initState();
+    _links = ref.read(deepLinksProvider).listen(_onDeepLink);
+  }
+
+  @override
+  void dispose() {
+    _links?.cancel();
+    super.dispose();
+  }
+
+  /// vless://…, happ://add/…, etc. opened from another app or the browser.
+  Future<void> _onDeepLink(Uri uri) async {
+    final context = rootNavigatorKey.currentContext;
+    if (context == null) return;
+    await importWithFeedback(context, ref, uri.toString());
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final router = ref.watch(routerProvider);
     final settings = ref.watch(settingsProvider);
     // Collect core logs from launch, not from the first visit to the Logs tab.
     ref.listen(logsProvider, (_, _) {});
+    ref.listen(subscriptionAutoUpdaterProvider, (_, _) {});
     final code = settings.language.code;
 
     return MaterialApp.router(

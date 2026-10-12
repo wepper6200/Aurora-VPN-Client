@@ -1,3 +1,7 @@
+import 'outbound.dart';
+
+export 'outbound.dart';
+
 enum ProxyProtocol {
   vless('VLESS'),
   vmess('VMess'),
@@ -10,52 +14,62 @@ enum ProxyProtocol {
   const ProxyProtocol(this.label);
 
   final String label;
+
+  /// Runs over UDP/QUIC, so a TCP handshake can't measure its latency.
+  bool get isUdpBased => this == hysteria2 || this == tuic || this == wireguard;
 }
 
 /// A single proxy endpoint, either from a subscription or added manually.
-///
-/// Protocol-specific settings (credentials, transport, TLS) are added to this
-/// model in stage 3 together with the link parsers.
 class ServerProfile {
   const ServerProfile({
     required this.id,
     required this.name,
-    required this.protocol,
-    required this.host,
-    required this.port,
+    required this.outbound,
     this.subscriptionId,
-    this.transport = 'tcp',
-    this.security = 'none',
     this.favorite = false,
+    this.sortIndex = 0,
   });
 
   final String id;
   final String name;
-  final ProxyProtocol protocol;
-  final String host;
-  final int port;
+  final OutboundConfig outbound;
 
   /// `null` for manually added configs.
   final String? subscriptionId;
-
-  /// tcp, ws, grpc, h2, httpupgrade, quic…
-  final String transport;
-
-  /// none, tls, reality.
-  final String security;
   final bool favorite;
 
-  ServerProfile copyWith({String? name, bool? favorite}) {
+  /// Position inside its subscription, as delivered by the provider.
+  final int sortIndex;
+
+  ProxyProtocol get protocol => outbound.protocol;
+  String get host => outbound.host;
+  int get port => outbound.port;
+
+  /// tcp, ws, grpc, h2, httpupgrade, quic, udp.
+  String get transport => outbound.transportLabel;
+
+  /// none, tls, reality.
+  String get security => outbound.securityLabel;
+
+  /// Identity that survives subscription refreshes (ids are regenerated),
+  /// used to keep favorites and the selection.
+  String get identity => '${protocol.name}|$host|$port|$name';
+
+  ServerProfile copyWith({
+    String? id,
+    String? name,
+    OutboundConfig? outbound,
+    String? Function()? subscriptionId,
+    bool? favorite,
+    int? sortIndex,
+  }) {
     return ServerProfile(
-      id: id,
+      id: id ?? this.id,
       name: name ?? this.name,
-      protocol: protocol,
-      host: host,
-      port: port,
-      subscriptionId: subscriptionId,
-      transport: transport,
-      security: security,
+      outbound: outbound ?? this.outbound,
+      subscriptionId: subscriptionId != null ? subscriptionId() : this.subscriptionId,
       favorite: favorite ?? this.favorite,
+      sortIndex: sortIndex ?? this.sortIndex,
     );
   }
 }

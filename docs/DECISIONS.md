@@ -88,3 +88,65 @@ lib/
   При подключении история заполняется нулями, чтобы линия сразу шла на всю ширину.
 - Логи — моноширинный JetBrains Mono (OFL, локально), висячий отступ, список `reverse` прилипает к низу.
 - Избранное — заполненная звезда Material (в Lucide нет залитых глифов).
+
+## Этап 3 — парсеры, хранилище, подписки, генератор конфигов
+
+### Модель
+- `OutboundConfig` — одна плоская неизменяемая модель для всех 7 протоколов: транспорт (tcp/ws/grpc/h2/httpupgrade)
+  и TLS (none/tls/reality + uTLS). JSON-сериализация нужна для зашифрованного хранения. Отдельный класс на каждый
+  протокол удвоил бы код парсеров, хранилища и редактора без выигрыша.
+- `ServerProfile.identity` = протокол + хост + порт + имя. При обновлении подписки сервер с той же identity
+  сохраняет `id`, а с ним избранное и текущий выбор.
+
+### Парсеры
+- Ссылки: vless, vmess (base64 JSON), trojan, ss (SIP002, SIP022 для 2022-шифров, legacy base64), hysteria2/hy2
+  (obfs salamander, port hopping — берётся первый порт), tuic, wireguard/wg, `happ://add/<url>`.
+  Authority и query разбираются вручную, без `Uri.parse`: IPv6 в скобках, пароли со спецсимволами, `+` остаётся `+`.
+- Не поддерживается (с понятной ошибкой): xhttp/kcp/quic-транспорты (их нет в sing-box), плагины Shadowsocks,
+  зашифрованные `happ://crypt…` (проприетарный ключ Happ).
+- Подписки: формат определяется автоматически — sing-box JSON (`outbounds` + `endpoints`), список ссылок,
+  base64-список (стандартный и URL-safe, с переносами), Clash/mihomo YAML (`proxies`).
+- Заголовки: `subscription-userinfo`, `profile-update-interval`, `profile-title` (в т.ч. `base64:`),
+  `content-disposition` как запасной источник имени, `support-url`. Интервал из заголовка используется,
+  пока пользователь не выбрал свой в форме.
+- User-Agent `AuroraVPN/0.1`: клиент представляется честно, без маскировки под чужие приложения.
+  Панели на неизвестный UA отдают base64-список, его мы разбираем.
+
+### Хранилище
+- drift (SQLite), таблицы `subscriptions` и `servers`, `ON DELETE CASCADE`.
+- Учётные данные серверов (UUID, пароли, ключи, параметры TLS) и URL подписок (в них токены) шифруются
+  AES-256-GCM (`package:cryptography`). Случайный 256-битный ключ создаётся один раз и хранится в
+  `flutter_secure_storage` (Android Keystore / Windows DPAPI). Имя, хост, порт и протокол хранятся открыто,
+  они нужны для списков и поиска.
+- Строки, которые не удалось расшифровать (например, после сброса хранилища ключей), пропускаются, без падения.
+- База лежит в каталоге application support (на Windows — `%APPDATA%`, не «Документы»).
+- Демо-данные больше не попадают в продакшен. Приложение стартует пустым, демо используется только в тестах.
+
+### Генератор sing-box
+- Целевая версия ядра **1.14.3**. Формат 1.12+: DNS-серверы нового вида (`type: https/tls/udp/local`),
+  `route.default_domain_resolver`, rule actions (`sniff`, `hijack-dns`, `reject`), WireGuard через `endpoints`.
+  Устаревших outbound'ов `block`/`dns` нет.
+- Каждая комбинация протокол × транспорт × режим проверяется настоящим `sing-box check`
+  (`test/integration_core`, тег `core`): 12 конфигов, 0 ошибок, 0 предупреждений.
+- Rule-set'ы (geoip-ru, geosite-category-ru, geosite-category-ads-all) **локальные**. Они скачиваются
+  `fetch_core` с закреплённых коммитов, кладутся в ассеты и подключаются как `type: local`. Ядру не нужно ходить
+  на GitHub при старте: запуск быстрее, работает офлайн, нет лишних внешних запросов.
+- Если IPv6 выключен, туннель всё равно захватывает v6 и отклоняет его, чтобы IPv6 не утекал мимо VPN.
+  Для DNS при этом стоит `ipv4_only`.
+- Kill switch на Windows = `strict_route` в режиме TUN. На Android `strict_route` включён всегда.
+
+### Задержка
+- TCP-handshake до сервера без DNS-резолва (`TcpLatencyTester`) работает без ядра и без прав.
+  Для UDP-протоколов (Hysteria2, TUIC, WireGuard) так не измерить: они пропускаются, URL-тест через ядро
+  появится на этапах 4–5.
+
+### Загрузка ядра
+- `scripts/fetch_core.ps1`: sing-box.exe (GitHub SagerNet), wintun.dll (wintun.net), rule-set'ы.
+  SHA-256 закреплены в `scripts/core_versions.json` (хэш wintun сверен с опубликованным на сайте), при
+  несовпадении скрипт останавливается. Бинарники и `.srs` в `.gitignore`.
+- В релизах sing-box нет готового `libbox.aar`: на этапе 4 он собирается из исходников через gomobile.
+
+### Импорт
+- Один `ImportService` для буфера обмена, QR (`mobile_scanner`, только Android) и deep-link (`app_links`,
+  Android intent-filter для всех схем). Одиночный http(s)-URL из буфера открывает форму подписки, всё остальное
+  импортируется сразу. Повторно ту же подписку не добавляет.

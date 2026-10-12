@@ -5,9 +5,11 @@ import 'package:go_router/go_router.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../../application/servers/servers_controller.dart';
-import '../../../core/ids.dart';
+import '../../../application/subscriptions/subscription_service.dart';
 import '../../../core/l10n.dart';
+import '../../../data/subscriptions/subscription_fetcher.dart';
 import '../../../domain/subscriptions/subscription.dart';
+import '../../theme/app_colors.dart';
 import '../../theme/tokens.dart';
 import '../../widgets/app_buttons.dart';
 import '../../widgets/form_section.dart';
@@ -35,6 +37,11 @@ class _SubscriptionEditorPageState extends ConsumerState<SubscriptionEditorPage>
   late int _hours;
   Subscription? _existing;
   bool _saving = false;
+  String? _error;
+
+  /// Until the user picks an interval, a new subscription uses the one its
+  /// provider sends in profile-update-interval.
+  bool _intervalTouched = false;
 
   @override
   void initState() {
@@ -62,24 +69,46 @@ class _SubscriptionEditorPageState extends ConsumerState<SubscriptionEditorPage>
 
   Future<void> _save() async {
     if (!_form.currentState!.validate()) return;
-    setState(() => _saving = true);
+    setState(() {
+      _saving = true;
+      _error = null;
+    });
     final url = _url.text.trim();
-    final name = _name.text.trim().isEmpty ? Uri.parse(url).host : _name.text.trim();
-    await ref
-        .read(serverActionsProvider)
-        .saveSubscription(
-          Subscription(
-            id: _existing?.id ?? newId(),
-            name: name,
-            url: url,
-            updatedAt: _existing?.updatedAt,
-            updateInterval: Duration(hours: _hours),
-            autoUpdate: _autoUpdate,
-            usage: _existing?.usage,
-            supportUrl: _existing?.supportUrl,
-          ),
+    final name = _name.text.trim();
+    try {
+      final existing = _existing;
+      if (existing == null) {
+        await ref
+            .read(subscriptionServiceProvider)
+            .add(
+              url: url,
+              name: name,
+              updateInterval: _intervalTouched ? Duration(hours: _hours) : null,
+              autoUpdate: _autoUpdate,
+            );
+      } else {
+        final updated = Subscription(
+          id: existing.id,
+          name: name.isEmpty ? existing.name : name,
+          url: url,
+          updatedAt: existing.updatedAt,
+          updateInterval: Duration(hours: _hours),
+          autoUpdate: _autoUpdate,
+          usage: existing.usage,
+          supportUrl: existing.supportUrl,
         );
-    if (mounted) context.pop();
+        await ref.read(serverActionsProvider).saveSubscription(updated);
+        if (url != existing.url) await ref.read(subscriptionServiceProvider).refresh(updated);
+      }
+      if (mounted) context.pop();
+    } on SubscriptionFetchException catch (e) {
+      if (mounted) {
+        setState(() {
+          _saving = false;
+          _error = context.l10n.subFetchError(e.message);
+        });
+      }
+    }
   }
 
   @override
@@ -154,11 +183,22 @@ class _SubscriptionEditorPageState extends ConsumerState<SubscriptionEditorPage>
                                 label: l10n.subUpdateInterval,
                                 value: _hours,
                                 options: {for (final h in intervals) h: l10n.hoursShort(h)},
-                                onChanged: (v) => setState(() => _hours = v),
+                                onChanged: (v) => setState(() {
+                                  _hours = v;
+                                  _intervalTouched = true;
+                                }),
                               ),
                       ),
                     ],
                   ),
+                  if (_error != null) ...[
+                    const SizedBox(height: AppSpacing.lg),
+                    Text(
+                      _error!,
+                      style: Theme.of(context).textTheme.bodyMedium!
+                          .copyWith(color: context.colors.danger),
+                    ),
+                  ],
                   const SizedBox(height: AppSpacing.xxl),
                   GradientButton(
                     label: l10n.save,

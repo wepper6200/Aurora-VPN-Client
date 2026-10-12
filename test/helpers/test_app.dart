@@ -1,6 +1,14 @@
 import 'dart:convert';
 
 import 'package:aurora_vpn/app.dart';
+import 'package:aurora_vpn/application/di.dart';
+import 'package:aurora_vpn/data/latency/tcp_latency_tester.dart';
+import 'package:aurora_vpn/data/mock/demo_data.dart';
+import 'package:aurora_vpn/data/mock/in_memory_repositories.dart';
+import 'package:aurora_vpn/data/mock/mock_vpn_core.dart';
+import 'package:aurora_vpn/data/subscriptions/subscription_fetcher.dart';
+import 'package:http/http.dart' as http;
+import 'package:http/testing.dart';
 import 'package:aurora_vpn/application/settings/settings_controller.dart';
 import 'package:aurora_vpn/core/clock.dart';
 import 'package:aurora_vpn/core/platform.dart';
@@ -46,8 +54,13 @@ Future<ProviderContainer> pumpApp(
   bool settle = true,
   bool fixedClock = false,
   List<Override> overrides = const [],
+  SubscriptionFetcher? fetcher,
 }) async {
-  SharedPreferences.setMockInitialValues({'settings.onboardingDone': true, ...prefs});
+  SharedPreferences.setMockInitialValues({
+    'settings.onboardingDone': true,
+    'settings.autoUpdateSubscriptions': false,
+    ...prefs,
+  });
   PackageInfo.setMockInitialValues(
     appName: 'Aurora VPN',
     packageName: 'dev.aurora.aurora_vpn',
@@ -62,6 +75,8 @@ Future<ProviderContainer> pumpApp(
   addTearDown(tester.view.reset);
 
   final start = clock.now();
+  DateTime now() => fixedClock ? goldenEpoch.add(clock.now().difference(start)) : clock.now();
+  final servers = InMemoryServerRepository(DemoData.servers);
   // The scope owns its container, so unmounting the tree at the end of a test
   // disposes the mock core and cancels its timers.
   await tester.pumpWidget(
@@ -69,8 +84,28 @@ Future<ProviderContainer> pumpApp(
       overrides: [
         sharedPreferencesProvider.overrideWithValue(instance),
         appPlatformProvider.overrideWithValue(platform),
-        if (fixedClock)
-          nowProvider.overrideWithValue(() => goldenEpoch.add(clock.now().difference(start))),
+        nowProvider.overrideWithValue(now),
+        serverRepositoryProvider.overrideWithValue(servers),
+        subscriptionRepositoryProvider.overrideWithValue(
+          InMemorySubscriptionRepository(DemoData.subscriptions, servers),
+        ),
+        installedAppsSourceProvider.overrideWithValue(
+          const StaticInstalledAppsSource(DemoData.apps),
+        ),
+        latencyTesterProvider.overrideWithValue(const StaticLatencyTester(DemoData.latencies)),
+        deepLinksProvider.overrideWithValue(const Stream<Uri>.empty()),
+        subscriptionFetcherProvider.overrideWithValue(
+          fetcher ??
+              SubscriptionFetcher(
+                userAgent: 'test',
+                client: MockClient((_) async => http.Response('not found', 404)),
+              ),
+        ),
+        vpnCoreProvider.overrideWith((ref) {
+          final core = MockVpnCoreController(latencies: DemoData.latencies, now: now);
+          ref.onDispose(core.dispose);
+          return core;
+        }),
         ...overrides,
       ],
       child: const AuroraApp(),

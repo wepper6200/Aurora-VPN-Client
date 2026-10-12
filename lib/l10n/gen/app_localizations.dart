@@ -615,6 +615,42 @@ abstract class AppLocalizations {
   /// **'No supported links found'**
   String get clipboardNoLinks;
 
+  /// No description provided for @importResult.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{Imported 1 item} other{Imported {count} items}}'**
+  String importResult(int count);
+
+  /// No description provided for @importPartial.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 item couldn\'t be imported} other{{count} items couldn\'t be imported}}'**
+  String importPartial(int count);
+
+  /// No description provided for @subFetchError.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t load the subscription: {reason}'**
+  String subFetchError(String reason);
+
+  /// No description provided for @subUpdated.
+  ///
+  /// In en, this message translates to:
+  /// **'Subscription updated'**
+  String get subUpdated;
+
+  /// No description provided for @scanHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Point the camera at a QR code'**
+  String get scanHint;
+
+  /// No description provided for @cameraDenied.
+  ///
+  /// In en, this message translates to:
+  /// **'Camera access is denied'**
+  String get cameraDenied;
+
   /// No description provided for @clipboardEmpty.
   ///
   /// In en, this message translates to:
@@ -806,6 +842,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'None'**
   String get editorSecurityNone;
+
+  /// No description provided for @editorObfsPassword.
+  ///
+  /// In en, this message translates to:
+  /// **'Obfuscation password (salamander)'**
+  String get editorObfsPassword;
 
   /// No description provided for @editorPrivateKey.
   ///

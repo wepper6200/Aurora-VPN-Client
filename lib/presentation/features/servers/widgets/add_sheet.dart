@@ -7,6 +7,7 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 import '../../../../core/l10n.dart';
 import '../../../../core/platform.dart';
 import '../../../router/app_router.dart';
+import '../../../util/import_feedback.dart';
 import '../../../theme/app_colors.dart';
 import '../../../theme/tokens.dart';
 import '../../../widgets/dialogs.dart';
@@ -50,7 +51,7 @@ Future<void> showAddSheet(BuildContext context, WidgetRef ref) {
                     iconColor: c.info,
                     title: l10n.addFromClipboard,
                     subtitle: l10n.addFromClipboardSub,
-                    onTap: () => close(() => importFromClipboard(context)),
+                    onTap: () => close(() => importFromClipboard(context, ref)),
                   ),
                   if (platform.isMobile)
                     SettingsTile(
@@ -77,8 +78,9 @@ Future<void> showAddSheet(BuildContext context, WidgetRef ref) {
   );
 }
 
-/// Stage 2: recognizes subscription URLs only; stage 3 adds the link parsers.
-Future<void> importFromClipboard(BuildContext context) async {
+/// A lone subscription URL opens the subscription form (to name it and pick
+/// the interval); anything else — share links, JSON, YAML — is imported.
+Future<void> importFromClipboard(BuildContext context, WidgetRef ref) async {
   final l10n = context.l10n;
   final text = (await Clipboard.getData(Clipboard.kTextPlain))?.text?.trim() ?? '';
   if (!context.mounted) return;
@@ -87,9 +89,9 @@ Future<void> importFromClipboard(BuildContext context) async {
     return;
   }
   final uri = Uri.tryParse(text);
-  if (uri != null && (uri.scheme == 'http' || uri.scheme == 'https')) {
+  if (!text.contains('\n') && uri != null && (uri.scheme == 'http' || uri.scheme == 'https')) {
     context.go(Uri(path: AppRoutes.newSubscription, queryParameters: {'url': text}).toString());
     return;
   }
-  showToast(context, l10n.clipboardNoLinks);
+  await importWithFeedback(context, ref, text);
 }

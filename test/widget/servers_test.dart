@@ -1,7 +1,12 @@
+import 'dart:convert';
+
 import 'package:aurora_vpn/application/servers/servers_controller.dart';
+import 'package:aurora_vpn/data/subscriptions/subscription_fetcher.dart';
 import 'package:aurora_vpn/presentation/features/servers/widgets/server_widgets.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:http/http.dart' as http;
+import 'package:http/testing.dart';
 
 import '../helpers/test_app.dart';
 
@@ -88,14 +93,40 @@ void main() {
     ]);
   });
 
-  testWidgets('adding a subscription validates the URL and saves it', (tester) async {
-    final container = await pumpApp(tester, prefs: en, size: const Size(412, 1000));
+  Future<void> openNewSubscription(WidgetTester tester) async {
     await _openServers(tester);
-
     await tester.tap(find.byTooltip('Add'));
     await tester.pumpAndSettle();
     await tester.tap(find.text('Subscription link'));
     await tester.pumpAndSettle();
+  }
+
+  testWidgets('adding a subscription fetches it and stores its servers', (tester) async {
+    final links = [
+      'vless://00000000-0000-4000-8000-000000000001@a.example.com:443?security=tls&type=ws&path=%2Fx#Alpha',
+      'trojan://secret@b.example.com:443#Beta',
+    ].join('\n');
+    final fetcher = SubscriptionFetcher(
+      userAgent: 'test',
+      client: MockClient(
+        (req) async => http.Response(
+          base64.encode(utf8.encode(links)),
+          200,
+          headers: {
+            'profile-title': 'base64:${base64.encode(utf8.encode('Fresh Sub'))}',
+            'subscription-userinfo': 'upload=0; download=1073741824; total=10737418240',
+            'profile-update-interval': '6',
+          },
+        ),
+      ),
+    );
+    final container = await pumpApp(
+      tester,
+      prefs: en,
+      size: const Size(412, 1000),
+      fetcher: fetcher,
+    );
+    await openNewSubscription(tester);
 
     await tester.tap(find.text('Save'));
     await tester.pumpAndSettle();
@@ -105,8 +136,30 @@ void main() {
     await tester.tap(find.text('Save'));
     await tester.pumpAndSettle();
 
-    final subs = container.read(subscriptionsProvider).value!;
-    expect(subs.map((s) => s.name), contains('new.example.com'));
+    final sub = container
+        .read(subscriptionsProvider)
+        .value!
+        .singleWhere((s) => s.name == 'Fresh Sub');
+    expect(sub.updateInterval, const Duration(hours: 6));
+    expect(sub.usage!.total, 10737418240);
+    final servers = container
+        .read(serversProvider)
+        .value!
+        .where((s) => s.subscriptionId == sub.id)
+        .map((s) => s.name);
+    expect(servers, ['Alpha', 'Beta']);
     expect(find.text('Search by name, address or protocol'), findsOneWidget);
+  });
+
+  testWidgets('a failing subscription shows the reason and stays on the form', (tester) async {
+    await pumpApp(tester, prefs: en, size: const Size(412, 1000));
+    await openNewSubscription(tester);
+
+    await tester.enterText(find.byType(TextFormField).first, 'https://down.example.com/sub');
+    await tester.tap(find.text('Save'));
+    await tester.pumpAndSettle();
+
+    expect(find.text("Couldn't load the subscription: HTTP 404"), findsOneWidget);
+    expect(find.text('New subscription'), findsOneWidget);
   });
 }

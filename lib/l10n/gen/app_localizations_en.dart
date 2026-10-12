@@ -324,6 +324,42 @@ class AppLocalizationsEn extends AppLocalizations {
   String get clipboardNoLinks => 'No supported links found';
 
   @override
+  String importResult(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Imported $count items',
+      one: 'Imported 1 item',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String importPartial(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count items couldn\'t be imported',
+      one: '1 item couldn\'t be imported',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String subFetchError(String reason) {
+    return 'Couldn\'t load the subscription: $reason';
+  }
+
+  @override
+  String get subUpdated => 'Subscription updated';
+
+  @override
+  String get scanHint => 'Point the camera at a QR code';
+
+  @override
+  String get cameraDenied => 'Camera access is denied';
+
+  @override
   String get clipboardEmpty => 'The clipboard is empty';
 
   @override
@@ -418,6 +454,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get editorSecurityNone => 'None';
+
+  @override
+  String get editorObfsPassword => 'Obfuscation password (salamander)';
 
   @override
   String get editorPrivateKey => 'Private key';

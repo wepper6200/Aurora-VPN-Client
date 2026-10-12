@@ -329,6 +329,44 @@ class AppLocalizationsRu extends AppLocalizations {
   String get clipboardNoLinks => 'Поддерживаемые ссылки не найдены';
 
   @override
+  String importResult(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Импортировано $count элементов',
+      few: 'Импортировано $count элемента',
+      one: 'Импортирован $count элемент',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String importPartial(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Не удалось импортировать $count элементов',
+      few: 'Не удалось импортировать $count элемента',
+      one: 'Не удалось импортировать $count элемент',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String subFetchError(String reason) {
+    return 'Не удалось загрузить подписку: $reason';
+  }
+
+  @override
+  String get subUpdated => 'Подписка обновлена';
+
+  @override
+  String get scanHint => 'Наведите камеру на QR-код';
+
+  @override
+  String get cameraDenied => 'Нет доступа к камере';
+
+  @override
   String get clipboardEmpty => 'Буфер обмена пуст';
 
   @override
@@ -423,6 +461,9 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get editorSecurityNone => 'Нет';
+
+  @override
+  String get editorObfsPassword => 'Пароль обфускации (salamander)';
 
   @override
   String get editorPrivateKey => 'Приватный ключ';

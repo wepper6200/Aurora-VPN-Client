@@ -14,9 +14,6 @@ import '../../widgets/page_scaffold.dart';
 import '../../widgets/settings_tile.dart';
 
 /// Manual server form. Fields adapt to the protocol, transport and security.
-///
-/// Stage 2 persists the common fields; stage 3 maps every field onto the full
-/// outbound model.
 class ServerEditorPage extends ConsumerStatefulWidget {
   const ServerEditorPage({super.key, this.id});
 
@@ -28,7 +25,7 @@ class ServerEditorPage extends ConsumerStatefulWidget {
 }
 
 class _ServerEditorPageState extends ConsumerState<ServerEditorPage> {
-  static const _v2rayTransports = ['tcp', 'ws', 'grpc', 'h2', 'httpupgrade'];
+  static final _v2rayTransports = [for (final t in TransportType.values) t.name];
   static const _ssMethods = [
     '2022-blake3-aes-128-gcm',
     '2022-blake3-aes-256-gcm',
@@ -36,6 +33,7 @@ class _ServerEditorPageState extends ConsumerState<ServerEditorPage> {
     'aes-128-gcm',
     'aes-256-gcm',
     'chacha20-ietf-poly1305',
+    'xchacha20-ietf-poly1305',
   ];
   static const _fingerprints = ['chrome', 'firefox', 'safari', 'edge', 'ios', 'android', 'random'];
 
@@ -52,6 +50,7 @@ class _ServerEditorPageState extends ConsumerState<ServerEditorPage> {
   bool _insecure = false;
 
   TextEditingController _c(String key) => _fields.putIfAbsent(key, TextEditingController.new);
+  String _v(String key) => _c(key).text.trim();
 
   @override
   void initState() {
@@ -59,16 +58,39 @@ class _ServerEditorPageState extends ConsumerState<ServerEditorPage> {
     final servers = ref.read(serversProvider).value ?? const [];
     _existing = widget.id == null ? null : servers.where((s) => s.id == widget.id).firstOrNull;
     final e = _existing;
-    _protocol = e?.protocol ?? ProxyProtocol.vless;
-    _transport = e?.transport ?? 'tcp';
-    _security = e?.security ?? 'tls';
-    if (e != null) {
-      _c('name').text = e.name;
-      _c('host').text = e.host;
-      _c('port').text = '${e.port}';
-    } else {
+    if (e == null) {
+      _protocol = ProxyProtocol.vless;
+      _transport = 'tcp';
+      _security = 'tls';
       _c('port').text = '443';
+      return;
     }
+    final o = e.outbound;
+    _protocol = o.protocol;
+    _transport = o.transport.type.name;
+    _security = o.tls.mode.name;
+    if (_ssMethods.contains(o.method)) _method = o.method;
+    if (_fingerprints.contains(o.tls.fingerprint)) _fingerprint = o.tls.fingerprint;
+    _flow = o.flow;
+    _insecure = o.tls.insecure;
+    final values = {
+      'name': e.name,
+      'host': o.host,
+      'port': '${o.port}',
+      'uuid': o.uuid,
+      'password': o.password,
+      'obfsPassword': o.obfsPassword,
+      'path': o.transport.path,
+      'hostHeader': o.transport.host,
+      'serviceName': o.transport.serviceName,
+      'sni': o.tls.sni,
+      'publicKey': o.tls.realityPublicKey,
+      'shortId': o.tls.realityShortId,
+      'privateKey': o.privateKey,
+      'peerPublicKey': o.peerPublicKey,
+      'localAddress': o.localAddresses.join(', '),
+    };
+    values.forEach((k, v) => _c(k).text = v);
   }
 
   @override
@@ -90,30 +112,81 @@ class _ServerEditorPageState extends ConsumerState<ServerEditorPage> {
 
   void _setProtocol(ProxyProtocol p) => setState(() {
     _protocol = p;
-    if (!_hasV2rayTransport) _transport = p == ProxyProtocol.wireguard ? 'udp' : 'quic';
-    if (_hasV2rayTransport && !_v2rayTransports.contains(_transport)) _transport = 'tcp';
+    if (!_hasV2rayTransport) _transport = 'tcp';
     if (_tlsForced) _security = 'tls';
     if (!_hasTls) _security = 'none';
     if (_security == 'reality' && p != ProxyProtocol.vless) _security = 'tls';
   });
 
+  /// Builds the outbound from the form, keeping settings the form doesn't
+  /// expose (alpn, congestion control, reserved bytes…) from the original.
+  OutboundConfig _outbound() {
+    final prev = _existing?.outbound;
+    final tlsMode = TlsMode.values.byName(_security);
+    final transport = TransportType.values.byName(_transport);
+    return OutboundConfig(
+      protocol: _protocol,
+      host: _v('host'),
+      port: int.parse(_v('port')),
+      uuid: _v('uuid'),
+      password: _v('password'),
+      method: _protocol == ProxyProtocol.shadowsocks ? _method : '',
+      flow: _protocol == ProxyProtocol.vless ? _flow : '',
+      alterId: prev?.alterId ?? 0,
+      vmessSecurity: prev?.vmessSecurity ?? 'auto',
+      transport: _hasV2rayTransport
+          ? TransportConfig(
+              type: transport,
+              path: _v('path'),
+              host: _v('hostHeader'),
+              serviceName: _v('serviceName'),
+            )
+          : const TransportConfig(),
+      tls: tlsMode == TlsMode.none
+          ? const TlsConfig()
+          : TlsConfig(
+              mode: tlsMode,
+              sni: _v('sni'),
+              alpn: prev?.tls.alpn ?? const [],
+              fingerprint: _fingerprint,
+              insecure: tlsMode == TlsMode.tls && _insecure,
+              realityPublicKey: tlsMode == TlsMode.reality ? _v('publicKey') : '',
+              realityShortId: tlsMode == TlsMode.reality ? _v('shortId') : '',
+            ),
+      obfsPassword: _protocol == ProxyProtocol.hysteria2 ? _v('obfsPassword') : '',
+      upMbps: prev?.upMbps ?? 0,
+      downMbps: prev?.downMbps ?? 0,
+      congestionControl: prev?.congestionControl ?? (_protocol == ProxyProtocol.tuic ? 'bbr' : ''),
+      udpRelayMode: prev?.udpRelayMode ?? '',
+      privateKey: _v('privateKey'),
+      peerPublicKey: _v('peerPublicKey'),
+      preSharedKey: prev?.preSharedKey ?? '',
+      localAddresses: [
+        for (final a in _v('localAddress').split(','))
+          if (a.trim().isNotEmpty) a.trim(),
+      ],
+      reserved: prev?.reserved ?? const [],
+      mtu: prev?.mtu ?? 0,
+    );
+  }
+
   Future<void> _save() async {
     if (!_form.currentState!.validate()) return;
-    final host = _c('host').text.trim();
-    final name = _c('name').text.trim();
+    final outbound = _outbound();
+    final name = _v('name');
+    final manualCount = (ref.read(serversProvider).value ?? const [])
+        .where((s) => s.subscriptionId == null)
+        .length;
     await ref
         .read(serverActionsProvider)
         .save(
           ServerProfile(
             id: _existing?.id ?? newId(),
             subscriptionId: _existing?.subscriptionId,
-            name: name.isEmpty ? host : name,
-            protocol: _protocol,
-            host: host,
-            port: int.parse(_c('port').text.trim()),
-            transport: _transport,
-            security: _security,
+            name: name.isEmpty ? outbound.host : name,
+            outbound: outbound,
             favorite: _existing?.favorite ?? false,
+            sortIndex: _existing?.sortIndex ?? manualCount,
           ),
         );
     if (mounted) context.pop();
@@ -186,6 +259,8 @@ class _ServerEditorPageState extends ConsumerState<ServerEditorPage> {
           required: true,
           obscure: true,
         ),
+      if (p == ProxyProtocol.hysteria2)
+        _text('obfsPassword', l10n.editorObfsPassword, icon: LucideIcons.eyeOff, obscure: true),
       if (p == ProxyProtocol.shadowsocks)
         _dropdown(l10n.editorMethod, _method, _ssMethods, (v) => _method = v),
       if (p == ProxyProtocol.vless)

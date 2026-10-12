@@ -1,13 +1,13 @@
 import 'dart:async';
 
-import 'package:clock/clock.dart';
-
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../data/parsers/link_serializer.dart';
 import '../../domain/servers/server_profile.dart';
 import '../../domain/subscriptions/subscription.dart';
 import '../di.dart';
 import '../settings/settings_controller.dart';
+import '../subscriptions/subscription_service.dart';
 
 final serversProvider = StreamProvider<List<ServerProfile>>(
   (ref) => ref.watch(serverRepositoryProvider).watch(),
@@ -76,25 +76,29 @@ class LatencyController extends Notifier<Map<String, LatencyResult>> {
 
   void _set(String id, LatencyResult r) => state = {...state, id: r};
 
-  Future<void> test(Iterable<String> ids) async {
-    final queue = ids.toList();
-    for (final id in queue) {
-      _set(id, const LatencyResult.testing());
-    }
-    final core = ref.read(vpnCoreProvider);
+  /// Tests [servers] in parallel. Servers the tester can't measure (UDP-based
+  /// protocols) are skipped and show no result.
+  Future<void> test(Iterable<ServerProfile> servers) async {
+    final tester = ref.read(latencyTesterProvider);
+    final queue = servers.where(tester.supports).toList();
+    state = {
+      for (final e in state.entries)
+        if (!servers.any((s) => s.id == e.key)) e.key: e.value,
+      for (final s in queue) s.id: const LatencyResult.testing(),
+    };
     final it = queue.iterator;
 
     Future<void> worker() async {
       while (it.moveNext()) {
-        final id = it.current;
+        final server = it.current;
         int? ms;
         try {
-          ms = await core.urlTest(id);
+          ms = await tester.test(server);
         } catch (_) {
           ms = null;
         }
         if (!ref.mounted) return;
-        _set(id, ms == null ? const LatencyResult.failed() : LatencyResult.ok(ms));
+        _set(server.id, ms == null ? const LatencyResult.failed() : LatencyResult.ok(ms));
       }
     }
 
@@ -217,29 +221,14 @@ class ServerActions {
   Future<void> saveSubscription(Subscription s) =>
       _ref.read(subscriptionRepositoryProvider).upsert(s);
 
-  Future<void> deleteSubscription(String id) async {
-    final servers = _ref.read(serversProvider).value ?? const [];
-    final repo = _ref.read(serverRepositoryProvider);
-    for (final s in servers.where((s) => s.subscriptionId == id)) {
-      await repo.delete(s.id);
-    }
-    await _ref.read(subscriptionRepositoryProvider).delete(id);
-  }
+  /// Removes the subscription together with its servers.
+  Future<void> deleteSubscription(String id) =>
+      _ref.read(subscriptionRepositoryProvider).delete(id);
 
-  /// Stage 2: simulated refresh. Stage 3 fetches and parses the URL.
-  Future<void> refreshSubscription(Subscription s) async {
-    await Future<void>.delayed(const Duration(milliseconds: 900));
-    await saveSubscription(
-      Subscription(
-        id: s.id,
-        name: s.name,
-        url: s.url,
-        updatedAt: clock.now(),
-        updateInterval: s.updateInterval,
-        autoUpdate: s.autoUpdate,
-        usage: s.usage,
-        supportUrl: s.supportUrl,
-      ),
-    );
-  }
+  /// Downloads the subscription again. Throws [SubscriptionFetchException].
+  Future<void> refreshSubscription(Subscription s) =>
+      _ref.read(subscriptionServiceProvider).refresh(s);
+
+  /// Standard share link for [s] (vless://, ss://…).
+  String shareLink(ServerProfile s) => LinkSerializer.toLink(s.name, s.outbound);
 }

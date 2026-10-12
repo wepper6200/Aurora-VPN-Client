@@ -17,53 +17,80 @@ class _Store<T> {
   final _items = <String, T>{};
   final _changes = StreamController<List<T>>.broadcast();
 
-  List<T> get _snapshot => List.unmodifiable(_items.values);
+  List<T> get snapshot => List.unmodifiable(_items.values);
 
   Stream<List<T>> watch() async* {
-    yield _snapshot;
+    yield snapshot;
     yield* _changes.stream;
   }
 
-  void put(T v) {
-    _items[_key(v)] = v;
-    _changes.add(_snapshot);
+  void putAll(Iterable<T> values) {
+    for (final v in values) {
+      _items[_key(v)] = v;
+    }
+    _changes.add(snapshot);
   }
 
-  void remove(String id) {
-    if (_items.remove(id) != null) _changes.add(_snapshot);
+  void removeWhere(bool Function(T) test) {
+    _items.removeWhere((_, v) => test(v));
+    _changes.add(snapshot);
   }
 }
 
+/// Test / preview double for [ServerRepository].
 class InMemoryServerRepository implements ServerRepository {
   InMemoryServerRepository([Iterable<ServerProfile> seed = const []])
     : _store = _Store(seed, (p) => p.id);
 
   final _Store<ServerProfile> _store;
 
-  @override
-  Stream<List<ServerProfile>> watch() => _store.watch();
+  List<ServerProfile> get snapshot => _store.snapshot;
 
   @override
-  Future<void> upsert(ServerProfile profile) async => _store.put(profile);
+  Stream<List<ServerProfile>> watch() =>
+      _store.watch().map((l) => [...l]..sort((a, b) => a.sortIndex.compareTo(b.sortIndex)));
 
   @override
-  Future<void> delete(String id) async => _store.remove(id);
+  Future<void> upsert(ServerProfile profile) async => _store.putAll([profile]);
+
+  @override
+  Future<void> upsertAll(List<ServerProfile> profiles) async => _store.putAll(profiles);
+
+  @override
+  Future<void> delete(String id) async => _store.removeWhere((p) => p.id == id);
+
+  @override
+  Future<void> replaceForSubscription(String subscriptionId, List<ServerProfile> servers) async {
+    _store
+      ..removeWhere((p) => p.subscriptionId == subscriptionId)
+      ..putAll(servers);
+  }
+
+  /// Mirrors the database's ON DELETE CASCADE.
+  void deleteForSubscription(String subscriptionId) =>
+      _store.removeWhere((p) => p.subscriptionId == subscriptionId);
 }
 
 class InMemorySubscriptionRepository implements SubscriptionRepository {
-  InMemorySubscriptionRepository([Iterable<Subscription> seed = const []])
+  InMemorySubscriptionRepository([Iterable<Subscription> seed = const [], this.servers])
     : _store = _Store(seed, (s) => s.id);
 
   final _Store<Subscription> _store;
+
+  /// When set, deleting a subscription also deletes its servers.
+  final InMemoryServerRepository? servers;
 
   @override
   Stream<List<Subscription>> watch() => _store.watch();
 
   @override
-  Future<void> upsert(Subscription subscription) async => _store.put(subscription);
+  Future<void> upsert(Subscription subscription) async => _store.putAll([subscription]);
 
   @override
-  Future<void> delete(String id) async => _store.remove(id);
+  Future<void> delete(String id) async {
+    _store.removeWhere((s) => s.id == id);
+    servers?.deleteForSubscription(id);
+  }
 }
 
 class StaticInstalledAppsSource implements InstalledAppsSource {
