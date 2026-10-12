@@ -1113,6 +1113,18 @@ abstract class AppLocalizations {
   /// **'No apps match'**
   String get splitNoApps;
 
+  /// No description provided for @crashTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'The previous session ended with a crash:'**
+  String get crashTitle;
+
+  /// No description provided for @crashPrevious.
+  ///
+  /// In en, this message translates to:
+  /// **'The app crashed last time. Details are in the Logs tab — please copy them for the developer.'**
+  String get crashPrevious;
+
   /// No description provided for @logsTitle.
   ///
   /// In en, this message translates to:

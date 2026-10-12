@@ -113,6 +113,18 @@ class AndroidVpnController implements VpnCoreController {
   @override
   Future<int?> urlTest(String serverId) async => null;
 
+  /// Report of the previous crash (JVM exception or Go panic), if any; the
+  /// native side deletes it once read.
+  static Future<String?> takeLastCrash() async {
+    try {
+      return await _methods.invokeMethod<String>('lastCrash');
+    } on PlatformException {
+      return null;
+    } on MissingPluginException {
+      return null;
+    }
+  }
+
   /// Opens Android's VPN settings (Always-on VPN + block connections without VPN).
   static Future<void> openSystemVpnSettings() => _methods.invokeMethod<void>('openVpnSettings');
 

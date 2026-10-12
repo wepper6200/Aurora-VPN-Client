@@ -201,6 +201,8 @@
   "splitShowSystem": "Show system apps",
   "splitNoApps": "No apps match",
 
+  "crashTitle": "The previous session ended with a crash:",
+  "crashPrevious": "The app crashed last time. Details are in the Logs tab — please copy them for the developer.",
   "logsTitle": "Logs",
   "logsEmptyTitle": "Nothing here yet",
   "logsEmptyBody": "Core logs will stream here once you connect.",

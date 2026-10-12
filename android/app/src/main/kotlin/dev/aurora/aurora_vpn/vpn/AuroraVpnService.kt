@@ -71,7 +71,9 @@ class AuroraVpnService : VpnService(), PlatformInterface, CommandServerHandler {
         private const val CHANNEL_ID = "vpn_status"
         private const val NOTIFICATION_ID = 1
 
-        @Volatile private var libboxReady = false
+        /** True once Libbox.setup ran in this process. */
+        @Volatile var libboxReady = false
+            private set
 
         fun start(context: Context) {
             ContextCompat.startForegroundService(
@@ -115,6 +117,13 @@ class AuroraVpnService : VpnService(), PlatformInterface, CommandServerHandler {
     private var label = ""
     private var lastNotificationUpdate = 0L
 
+    /**
+     * What the user asked for most recently. Start/stop work is queued on
+     * [worker] and checks this, so a stop followed by a quick start (or the
+     * reverse) ends in the right state instead of racing.
+     */
+    @Volatile private var wantRunning = false
+
     override fun onCreate() {
         super.onCreate()
         monitor = NetworkMonitor(this)
@@ -123,27 +132,33 @@ class AuroraVpnService : VpnService(), PlatformInterface, CommandServerHandler {
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         if (intent?.action == ACTION_STOP) {
-            worker.execute { stopTunnel(null) }
+            wantRunning = false
+            enqueue { stopTunnel(null) }
             return START_NOT_STICKY
         }
         // ACTION_START from the app, or android.net.VpnService from Always-on.
-        if (VpnHub.status == VpnStatus.STARTED || VpnHub.status == VpnStatus.STARTING) {
-            return START_NOT_STICKY
-        }
+        // Every startForegroundService() must be answered with startForeground()
+        // — even when we're already running — or Android kills the app.
         label = VpnHub.loadLabel(this)
-        VpnHub.setStatus(VpnStatus.STARTING)
-        showNotification(getString(R.string.notification_connecting))
-        worker.execute { startTunnel() }
+        val running = VpnHub.status == VpnStatus.STARTED
+        showNotification(
+            getString(if (running) R.string.notification_connected else R.string.notification_connecting),
+            foreground = true,
+        )
+        wantRunning = true
+        enqueue { startTunnel() }
         return START_NOT_STICKY
     }
 
     override fun onRevoke() {
         // Another VPN took over or the user revoked permission.
-        worker.execute { stopTunnel(null) }
+        wantRunning = false
+        enqueue { stopTunnel(null) }
     }
 
     override fun onDestroy() {
-        worker.execute {
+        wantRunning = false
+        enqueue {
             if (VpnHub.status != VpnStatus.STOPPED) stopTunnel(null)
             monitor.close()
         }
@@ -151,14 +166,31 @@ class AuroraVpnService : VpnService(), PlatformInterface, CommandServerHandler {
         super.onDestroy()
     }
 
+    /** Runs [block] on the lifecycle thread; never throws (e.g. after shutdown). */
+    private fun enqueue(block: () -> Unit) {
+        runCatching {
+            worker.execute {
+                try {
+                    block()
+                } catch (e: Throwable) {
+                    Log.e(TAG, "lifecycle task failed", e)
+                }
+            }
+        }.onFailure { Log.w(TAG, "lifecycle task rejected", it) }
+    }
+
     // --- lifecycle ------------------------------------------------------------
 
     private fun startTunnel() {
+        if (!wantRunning) return
+        if (VpnHub.status == VpnStatus.STARTED && commandServer != null) return
         val config = VpnHub.loadConfig(this)
         if (config == null) {
+            wantRunning = false
             stopTunnel(getString(R.string.error_no_config))
             return
         }
+        VpnHub.setStatus(VpnStatus.STARTING)
         try {
             setupLibbox(this)
             // Xray first: sing-box's SOCKS bridge must have someone to talk to.
@@ -170,11 +202,17 @@ class AuroraVpnService : VpnService(), PlatformInterface, CommandServerHandler {
             }
             // Split-tunnel packages are already in the config's TUN inbound.
             server.startOrReloadService(config, OverrideOptions())
+            if (!wantRunning) {
+                // Cancelled while starting.
+                stopTunnel(null)
+                return
+            }
             VpnHub.setStatus(VpnStatus.STARTED)
             showNotification(getString(R.string.notification_connected))
             connectClient()
-        } catch (e: Exception) {
+        } catch (e: Throwable) {
             Log.e(TAG, "start failed", e)
+            wantRunning = false
             stopTunnel(e.message ?: e.toString())
         }
     }
@@ -193,10 +231,12 @@ class AuroraVpnService : VpnService(), PlatformInterface, CommandServerHandler {
         runCatching { Xraybridge.stop() }.onFailure { Log.w(TAG, "xray stop", it) }
         monitor.stop()
         VpnHub.setStatus(VpnStatus.STOPPED, error)
-        ServiceCompat.stopForeground(this, ServiceCompat.STOP_FOREGROUND_REMOVE)
-        stopSelf()
+        // A start request queued behind this stop keeps the service alive.
+        if (!wantRunning) {
+            runCatching { ServiceCompat.stopForeground(this, ServiceCompat.STOP_FOREGROUND_REMOVE) }
+            stopSelf()
+        }
     }
-
     /** Subscribes to traffic stats and logs from the command server. */
     private fun connectClient() {
         val options = CommandClientOptions().apply {
@@ -218,15 +258,17 @@ class AuroraVpnService : VpnService(), PlatformInterface, CommandServerHandler {
 
         override fun clearLogs() {}
 
-        override fun writeLogs(messageList: LogIterator) {
+        // Called from Go without an error channel: an escaping exception
+        // would abort the whole process, so these never throw.
+        override fun writeLogs(messageList: LogIterator) = guard {
             while (messageList.hasNext()) {
                 val entry = messageList.next()
                 VpnHub.emit(VpnEvent.Log(entry.level, entry.message))
             }
         }
 
-        override fun writeStatus(message: StatusMessage) {
-            if (!message.trafficAvailable) return
+        override fun writeStatus(message: StatusMessage) = guard {
+            if (!message.trafficAvailable) return@guard
             VpnHub.emit(
                 VpnEvent.Traffic(message.uplink, message.downlink, message.uplinkTotal, message.downlinkTotal),
             )
@@ -258,7 +300,11 @@ class AuroraVpnService : VpnService(), PlatformInterface, CommandServerHandler {
 
     // --- notification -----------------------------------------------------------
 
-    private fun showNotification(text: String) {
+    /**
+     * [foreground] promotes the service (required right after every
+     * startForegroundService); later updates only re-post the notification.
+     */
+    private fun showNotification(text: String, foreground: Boolean = false) = guard {
         val nm = getSystemService(NotificationManager::class.java)
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             nm.createNotificationChannel(
@@ -289,23 +335,39 @@ class AuroraVpnService : VpnService(), PlatformInterface, CommandServerHandler {
             .setCategory(NotificationCompat.CATEGORY_SERVICE)
             .setForegroundServiceBehavior(NotificationCompat.FOREGROUND_SERVICE_IMMEDIATE)
             .build()
-        ServiceCompat.startForeground(
-            this,
-            NOTIFICATION_ID,
-            notification,
-            if (Build.VERSION.SDK_INT >= 34) ServiceInfo.FOREGROUND_SERVICE_TYPE_SPECIAL_USE else 0,
-        )
+        if (foreground) {
+            ServiceCompat.startForeground(
+                this,
+                NOTIFICATION_ID,
+                notification,
+                if (Build.VERSION.SDK_INT >= 34) ServiceInfo.FOREGROUND_SERVICE_TYPE_SPECIAL_USE else 0,
+            )
+        } else if (wantRunning) {
+            nm.notify(NOTIFICATION_ID, notification)
+        }
+    }
+
+    /** Swallows and logs; for code reachable from Go callbacks. */
+    private inline fun guard(block: () -> Unit) {
+        try {
+            block()
+        } catch (e: Throwable) {
+            Log.e(TAG, "callback failed", e)
+        }
     }
 
     // --- CommandServerHandler -----------------------------------------------------
 
     override fun serviceStop() {
-        worker.execute { stopTunnel(null) }
+        wantRunning = false
+        enqueue { stopTunnel(null) }
     }
 
     override fun serviceReload() {
-        val config = VpnHub.loadConfig(this) ?: return
-        commandServer?.startOrReloadService(config, OverrideOptions())
+        enqueue {
+            val config = VpnHub.loadConfig(this) ?: return@enqueue
+            commandServer?.startOrReloadService(config, OverrideOptions())
+        }
     }
 
     override fun getSystemProxyStatus(): SystemProxyStatus = SystemProxyStatus()
@@ -314,9 +376,7 @@ class AuroraVpnService : VpnService(), PlatformInterface, CommandServerHandler {
 
     override fun triggerNativeCrash() {}
 
-    override fun writeDebugMessage(message: String?) {
-        Log.d(TAG, message.orEmpty())
-    }
+    override fun writeDebugMessage(message: String?) = guard { Log.d(TAG, message.orEmpty()) }
 
     override fun connectSSHAgent(): Int = -1
 
@@ -476,13 +536,15 @@ class AuroraVpnService : VpnService(), PlatformInterface, CommandServerHandler {
 
     override fun includeAllNetworks(): Boolean = false
 
-    override fun readWIFIState(): WIFIState? {
-        // Only needed for SSID-based rules, which this client doesn't generate.
+    // Only needed for SSID-based rules, which this client doesn't generate.
+    // No error channel to Go, so failures (missing permission) become null.
+    override fun readWIFIState(): WIFIState? = runCatching {
         @Suppress("DEPRECATION")
-        val info = applicationContext.getSystemService(WifiManager::class.java)?.connectionInfo ?: return null
+        val info = applicationContext.getSystemService(WifiManager::class.java)?.connectionInfo
+            ?: return@runCatching null
         val ssid = info.ssid.orEmpty().removeSurrounding("\"").takeUnless { it == "<unknown ssid>" }.orEmpty()
-        return WIFIState(ssid, info.bssid.orEmpty())
-    }
+        WIFIState(ssid, info.bssid.orEmpty())
+    }.getOrNull()
 
     override fun clearDNSCache() {}
 

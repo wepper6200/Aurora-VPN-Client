@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../core/log_mask.dart';
 import '../../domain/logs/log_entry.dart';
 import '../di.dart';
 
@@ -42,6 +43,14 @@ class LogsController extends Notifier<LogsState> {
     final next = [...state.entries, e];
     final overflow = next.length - LogsState.capacity;
     state = state.copyWith(entries: overflow > 0 ? next.sublist(overflow) : next);
+  }
+
+  /// Adds a multi-line report (e.g. the previous crash) as error entries.
+  void addReport(DateTime time, String title, String body) {
+    add(LogEntry(time: time, level: LogLevel.error, message: title));
+    for (final line in body.split('\n').where((l) => l.trim().isNotEmpty).take(200)) {
+      add(LogEntry(time: time, level: LogLevel.error, message: LogMask.apply(line)));
+    }
   }
 
   void togglePause() => state = state.copyWith(paused: !state.paused);

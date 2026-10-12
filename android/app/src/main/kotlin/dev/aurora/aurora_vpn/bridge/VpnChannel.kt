@@ -9,6 +9,7 @@ import android.os.Build
 import android.provider.Settings
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
+import dev.aurora.aurora_vpn.CrashLog
 import dev.aurora.aurora_vpn.vpn.AuroraVpnService
 import dev.aurora.aurora_vpn.vpn.VpnEvent
 import dev.aurora.aurora_vpn.vpn.VpnHub
@@ -71,9 +72,12 @@ class VpnChannel(private val activity: Activity, messenger: BinaryMessenger) :
             }
             "state" -> result.success(statusMap())
             "openVpnSettings" -> {
-                activity.startActivity(Intent(Settings.ACTION_VPN_SETTINGS))
-                result.success(null)
+                // Some vendor builds lack this screen; fall back to Wi-Fi/network settings.
+                val opened = runCatching { activity.startActivity(Intent(Settings.ACTION_VPN_SETTINGS)) }.isSuccess ||
+                    runCatching { activity.startActivity(Intent(Settings.ACTION_WIRELESS_SETTINGS)) }.isSuccess
+                result.success(opened)
             }
+            "lastCrash" -> result.success(CrashLog.takeLast(activity))
             "sdkInt" -> result.success(Build.VERSION.SDK_INT)
             "deviceInfo" -> result.success(
                 mapOf(

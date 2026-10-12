@@ -624,6 +624,13 @@ class AppLocalizationsRu extends AppLocalizations {
   String get splitNoApps => 'Приложения не найдены';
 
   @override
+  String get crashTitle => 'Предыдущий сеанс завершился аварийно:';
+
+  @override
+  String get crashPrevious =>
+      'В прошлый раз приложение аварийно закрылось. Подробности во вкладке «Логи», скопируйте их для разработчика.';
+
+  @override
   String get logsTitle => 'Логи';
 
   @override

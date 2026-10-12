@@ -615,6 +615,13 @@ class AppLocalizationsEn extends AppLocalizations {
   String get splitNoApps => 'No apps match';
 
   @override
+  String get crashTitle => 'The previous session ended with a crash:';
+
+  @override
+  String get crashPrevious =>
+      'The app crashed last time. Details are in the Logs tab — please copy them for the developer.';
+
+  @override
   String get logsTitle => 'Logs';
 
   @override

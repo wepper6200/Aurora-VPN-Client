@@ -7,11 +7,15 @@ import 'application/di.dart';
 import 'application/logs/logs_controller.dart';
 import 'application/settings/settings_controller.dart';
 import 'application/subscriptions/subscription_service.dart';
+import 'core/clock.dart';
 import 'core/l10n.dart';
+import 'core/platform.dart';
+import 'data/vpn/android_vpn_controller.dart';
 import 'domain/settings/app_settings.dart';
 import 'presentation/router/app_router.dart';
 import 'presentation/theme/app_theme.dart';
 import 'presentation/util/import_feedback.dart';
+import 'presentation/widgets/dialogs.dart';
 
 class AuroraApp extends ConsumerStatefulWidget {
   const AuroraApp({super.key});
@@ -27,6 +31,20 @@ class _AuroraAppState extends ConsumerState<AuroraApp> {
   void initState() {
     super.initState();
     _links = ref.read(deepLinksProvider).listen(_onDeepLink);
+    if (ref.read(appPlatformProvider) == AppPlatform.android) {
+      WidgetsBinding.instance.addPostFrameCallback((_) => _reportPreviousCrash());
+    }
+  }
+
+  /// Surfaces the last crash (JVM or core) in the Logs tab so it can be
+  /// copied without adb.
+  Future<void> _reportPreviousCrash() async {
+    final report = await AndroidVpnController.takeLastCrash();
+    final context = rootNavigatorKey.currentContext;
+    if (report == null || context == null || !context.mounted) return;
+    final l10n = context.l10n;
+    ref.read(logsProvider.notifier).addReport(ref.read(nowProvider)(), l10n.crashTitle, report);
+    showToast(context, l10n.crashPrevious, error: true);
   }
 
   @override
