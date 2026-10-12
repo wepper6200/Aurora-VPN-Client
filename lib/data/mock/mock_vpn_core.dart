@@ -40,6 +40,8 @@ class MockVpnCoreController implements VpnCoreController {
   @override
   Stream<LogEntry> get logs => _logs.stream;
 
+  bool _running = false;
+
   /// Lets tests and previews inject core log lines.
   void emitLog(LogLevel level, String message) => _log(level, message);
 
@@ -49,6 +51,7 @@ class MockVpnCoreController implements VpnCoreController {
   @override
   Future<void> start(CoreStartRequest request) async {
     _cancel();
+    _running = true;
     _states.add(VpnState(status: VpnStatus.connecting, serverId: request.serverId));
     _log(LogLevel.info, 'sing-box started (mock)');
     _log(LogLevel.debug, 'outbound/proxy[${request.serverId}]: dialing');
@@ -68,6 +71,7 @@ class MockVpnCoreController implements VpnCoreController {
             error: 'dial tcp: i/o timeout',
           ),
         );
+        _running = false;
         _log(LogLevel.error, 'outbound/proxy[${request.serverId}]: dial tcp: i/o timeout');
       }
     });
@@ -101,12 +105,16 @@ class MockVpnCoreController implements VpnCoreController {
   @override
   Future<void> stop() async {
     _cancel();
+    _running = false;
     _states.add(const VpnState(status: VpnStatus.disconnecting));
     _log(LogLevel.info, 'sing-box stopped');
     await Future<void>.delayed(const Duration(milliseconds: 250));
     _traffic.add(TrafficSample.zero);
     _states.add(const VpnState());
   }
+
+  @override
+  Future<bool> isRunning() async => _running;
 
   @override
   Future<int?> urlTest(String serverId) async {

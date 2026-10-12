@@ -108,6 +108,12 @@ class AndroidVpnController implements VpnCoreController {
   @override
   Future<void> stop() => _methods.invokeMethod<void>('stop');
 
+  @override
+  Future<bool> isRunning() async {
+    final s = await _methods.invokeMapMethod<String, Object?>('state');
+    return s?['status'] == 'connecting' || s?['status'] == 'connected';
+  }
+
   /// In-tunnel URL tests arrive with the outbound-group work; TCP ping covers
   /// the disconnected case.
   @override

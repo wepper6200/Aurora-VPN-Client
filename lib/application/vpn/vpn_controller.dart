@@ -1,10 +1,14 @@
 import 'dart:async';
+import 'dart:convert';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../domain/servers/server_profile.dart';
 import '../../domain/vpn/vpn_core.dart';
 import '../di.dart';
+import '../routing/routing_controller.dart';
 import '../servers/servers_controller.dart';
+import '../settings/settings_controller.dart';
 import 'core_config_service.dart';
 
 final vpnStateProvider = NotifierProvider<VpnController, VpnState>(VpnController.new);
@@ -14,8 +18,36 @@ class VpnController extends Notifier<VpnState> {
   VpnState build() {
     final sub = ref.watch(vpnCoreProvider).states.listen((s) => state = s);
     ref.onDispose(sub.cancel);
+    ref.onDispose(() => _reload?.cancel());
+
+    // Anything that ends up in the core config is applied live: another
+    // server, an edited server, routing, DNS/MTU/IPv6/kill switch/log level.
+    ref.listen(selectedServerProvider.select(_serverKey), (_, _) => _scheduleReload());
+    ref.listen(routingProvider, (_, _) => _scheduleReload());
+    ref.listen(
+      settingsProvider.select(
+        (s) => (s.dnsProtocol, s.dnsServer, s.mtu, s.ipv6, s.killSwitch, s.logLevel, s.windowsMode),
+      ),
+      (_, _) => _scheduleReload(),
+    );
     return const VpnState();
   }
+
+  Timer? _reload;
+
+  static String? _serverKey(ServerProfile? s) =>
+      s == null ? null : '${s.id}|${jsonEncode(s.outbound.toJson())}';
+
+  /// Debounced so a burst of toggles restarts the core once.
+  void _scheduleReload() {
+    if (state.status != VpnStatus.connected) return;
+    _reload?.cancel();
+    _reload = Timer(reloadDelay, () {
+      if (ref.mounted && state.status == VpnStatus.connected) unawaited(connect());
+    });
+  }
+
+  static const reloadDelay = Duration(milliseconds: 700);
 
   Future<void> connect() async {
     final server = ref.read(selectedServerProvider);
@@ -35,6 +67,18 @@ class VpnController extends Notifier<VpnState> {
   }
 
   Future<void> disconnect() => ref.read(vpnCoreProvider).stop();
+
+  /// "Connect on launch": only when enabled, a server is chosen and no
+  /// tunnel is already up (the Android service may outlive the UI).
+  Future<void> autoConnect() async {
+    if (!ref.read(settingsProvider).autoConnect) return;
+    // At launch the server list is still loading from the database.
+    await ref.read(serversProvider.future);
+    if (!ref.mounted || ref.read(selectedServerProvider) == null) return;
+    if (await ref.read(vpnCoreProvider).isRunning()) return;
+    if (!ref.mounted || state.status != VpnStatus.disconnected) return;
+    await connect();
+  }
 
   Future<void> toggle() async {
     switch (state.status) {

@@ -9,6 +9,7 @@ import android.os.Build
 import android.provider.Settings
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
+import androidx.core.content.FileProvider
 import dev.aurora.aurora_vpn.CrashLog
 import dev.aurora.aurora_vpn.vpn.AuroraVpnService
 import dev.aurora.aurora_vpn.vpn.VpnEvent
@@ -17,6 +18,7 @@ import io.flutter.plugin.common.BinaryMessenger
 import io.flutter.plugin.common.EventChannel
 import io.flutter.plugin.common.MethodCall
 import io.flutter.plugin.common.MethodChannel
+import java.io.File
 
 /**
  * `aurora/vpn` (methods) and `aurora/vpn/events` (status, traffic, logs).
@@ -78,6 +80,14 @@ class VpnChannel(private val activity: Activity, messenger: BinaryMessenger) :
                 result.success(opened)
             }
             "lastCrash" -> result.success(CrashLog.takeLast(activity))
+            "shareFile" -> {
+                val path = call.argument<String>("path")
+                if (path.isNullOrBlank()) {
+                    result.error("ARGS", "path is required", null)
+                    return
+                }
+                result.success(shareFile(File(path), call.argument<String>("mime") ?: "text/plain"))
+            }
             "sdkInt" -> result.success(Build.VERSION.SDK_INT)
             "deviceInfo" -> result.success(
                 mapOf(
@@ -107,6 +117,17 @@ class VpnChannel(private val activity: Activity, messenger: BinaryMessenger) :
         pendingPermission = result
         activity.startActivityForResult(intent, REQUEST_VPN)
     }
+
+    /** System share sheet for a file under cache/logs (see res/xml/file_paths.xml). */
+    private fun shareFile(file: File, mime: String): Boolean = runCatching {
+        val uri = FileProvider.getUriForFile(activity, "${activity.packageName}.files", file)
+        val send = Intent(Intent.ACTION_SEND)
+            .setType(mime)
+            .putExtra(Intent.EXTRA_STREAM, uri)
+            .putExtra(Intent.EXTRA_SUBJECT, file.name)
+            .addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+        activity.startActivity(Intent.createChooser(send, null))
+    }.isSuccess
 
     /** Forwarded from MainActivity.onActivityResult. */
     fun onActivityResult(requestCode: Int, resultCode: Int): Boolean {

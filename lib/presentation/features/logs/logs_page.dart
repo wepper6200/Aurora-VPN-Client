@@ -57,6 +57,22 @@ class LogsPage extends ConsumerWidget {
                 },
         ),
         AppIconButton(
+          icon: LucideIcons.fileDown,
+          tooltip: l10n.logsExport,
+          onPressed: logs.entries.isEmpty
+              ? null
+              : () async {
+                  try {
+                    final path = await ctrl.export();
+                    if (path != null && context.mounted) {
+                      showToast(context, l10n.logsExported(path));
+                    }
+                  } catch (_) {
+                    if (context.mounted) showToast(context, l10n.logsExportFailed, error: true);
+                  }
+                },
+        ),
+        AppIconButton(
           icon: LucideIcons.trash2,
           tooltip: l10n.logsClear,
           onPressed: logs.entries.isEmpty ? null : ctrl.clear,

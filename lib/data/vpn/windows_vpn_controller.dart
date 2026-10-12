@@ -303,6 +303,11 @@ class WindowsVpnController implements VpnCoreController {
     }
   }
 
+  /// Orphans of a previous run are killed by [recover] at launch, so only our
+  /// own processes count.
+  @override
+  Future<bool> isRunning() async => _singbox != null;
+
   @override
   Future<int?> urlTest(String serverId) async => null;
 

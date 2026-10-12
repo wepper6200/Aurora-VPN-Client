@@ -217,6 +217,7 @@
   "logsResume": "Resume",
   "logsCopy": "Copy",
   "logsExport": "Export",
+  "logsExportFailed": "Couldn't export the logs",
   "logsClear": "Clear",
   "logsPaused": "Stream paused",
   "logsExported": "Saved to {path}",

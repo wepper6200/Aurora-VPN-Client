@@ -667,6 +667,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get logsExport => 'Export';
 
   @override
+  String get logsExportFailed => 'Couldn\'t export the logs';
+
+  @override
   String get logsClear => 'Clear';
 
   @override

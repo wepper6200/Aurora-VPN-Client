@@ -7,6 +7,7 @@ import 'application/di.dart';
 import 'application/logs/logs_controller.dart';
 import 'application/settings/settings_controller.dart';
 import 'application/subscriptions/subscription_service.dart';
+import 'application/vpn/vpn_controller.dart';
 import 'core/clock.dart';
 import 'core/l10n.dart';
 import 'core/platform.dart';
@@ -32,9 +33,10 @@ class _AuroraAppState extends ConsumerState<AuroraApp> {
   void initState() {
     super.initState();
     _links = ref.read(deepLinksProvider).listen(_onDeepLink);
-    if (ref.read(appPlatformProvider) == AppPlatform.android) {
-      WidgetsBinding.instance.addPostFrameCallback((_) => _reportPreviousCrash());
-    }
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (ref.read(appPlatformProvider) == AppPlatform.android) unawaited(_reportPreviousCrash());
+      unawaited(ref.read(vpnStateProvider.notifier).autoConnect().catchError((_) {}));
+    });
   }
 
   /// Surfaces the last crash (JVM or core) in the Logs tab so it can be

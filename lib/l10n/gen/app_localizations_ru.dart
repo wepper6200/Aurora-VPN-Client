@@ -676,6 +676,9 @@ class AppLocalizationsRu extends AppLocalizations {
   String get logsExport => 'Экспорт';
 
   @override
+  String get logsExportFailed => 'Не удалось экспортировать логи';
+
+  @override
   String get logsClear => 'Очистить';
 
   @override

@@ -200,6 +200,7 @@
   "logsResume": "Продолжить",
   "logsCopy": "Копировать",
   "logsExport": "Экспорт",
+  "logsExportFailed": "Не удалось экспортировать логи",
   "logsClear": "Очистить",
   "logsPaused": "Поток приостановлен",
   "logsExported": "Сохранено: {path}",

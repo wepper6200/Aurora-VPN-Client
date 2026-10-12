@@ -1215,6 +1215,12 @@ abstract class AppLocalizations {
   /// **'Export'**
   String get logsExport;
 
+  /// No description provided for @logsExportFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t export the logs'**
+  String get logsExportFailed;
+
   /// No description provided for @logsClear.
   ///
   /// In en, this message translates to:

@@ -89,6 +89,10 @@ abstract interface class VpnCoreController {
   Future<void> start(CoreStartRequest request);
   Future<void> stop();
 
+  /// Whether a tunnel is already up or starting (e.g. the Android service kept
+  /// running while the UI was closed, or Always-on VPN started it).
+  Future<bool> isRunning();
+
   /// Delay in ms through [serverId]'s outbound, or `null` if unreachable.
   Future<int?> urlTest(String serverId);
 
