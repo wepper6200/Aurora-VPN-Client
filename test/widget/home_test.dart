@@ -1,4 +1,7 @@
+import 'package:aurora_vpn/application/di.dart';
 import 'package:aurora_vpn/application/vpn/vpn_controller.dart';
+import 'package:aurora_vpn/data/mock/mock_vpn_core.dart';
+import 'package:aurora_vpn/domain/logs/log_entry.dart';
 import 'package:aurora_vpn/domain/vpn/vpn_core.dart';
 import 'package:aurora_vpn/presentation/features/home/widgets/connect_button.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -47,5 +50,24 @@ void main() {
 
     expect(container.read(vpnStateProvider).status, VpnStatus.error);
     expect(find.text('dial tcp: i/o timeout'), findsOneWidget);
+  });
+
+  testWidgets('a connected tunnel whose server name does not resolve shows a warning', (
+    tester,
+  ) async {
+    final container = await pumpApp(tester, prefs: en);
+    await connect(tester, traffic: const Duration(seconds: 1));
+
+    final core = container.read(vpnCoreProvider) as MockVpnCoreController;
+    core.emitLog(
+      LogLevel.error,
+      'connection: open connection to 34.96.106.127:443 using outbound/vless[proxy]: '
+      'lookup fr5.example.com: NXDOMAIN',
+    );
+    await pumpFor(tester, const Duration(milliseconds: 600));
+    expect(find.textContaining("server's address doesn't exist"), findsOneWidget);
+
+    await disconnect(tester);
+    expect(find.textContaining("server's address doesn't exist"), findsNothing);
   });
 }

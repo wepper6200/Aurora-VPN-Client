@@ -50,7 +50,7 @@ class SubscriptionFetcher {
   SubscriptionFetcher({http.Client? client, required this.userAgent, this.extraHeaders = _none})
     : _client = client ?? http.Client();
 
-  static Map<String, String> _none() => const {};
+  static Future<Map<String, String>> _none() async => const {};
 
   final http.Client _client;
 
@@ -59,7 +59,7 @@ class SubscriptionFetcher {
   final String userAgent;
 
   /// Additional headers per request (e.g. HWID for device-limited panels).
-  final Map<String, String> Function() extraHeaders;
+  final Future<Map<String, String>> Function() extraHeaders;
 
   static const timeout = Duration(seconds: 20);
   static const maxBytes = 8 * 1024 * 1024;
@@ -69,10 +69,11 @@ class SubscriptionFetcher {
     if (uri == null || !(uri.scheme == 'http' || uri.scheme == 'https')) {
       throw const SubscriptionFetchException(SubscriptionError.invalidUrl, 'invalid URL');
     }
+    final extra = await extraHeaders();
     final http.Response res;
     try {
       res = await _client
-          .get(uri, headers: {...extraHeaders(), 'User-Agent': userAgent, 'Accept': '*/*'})
+          .get(uri, headers: {...extra, 'User-Agent': userAgent, 'Accept': '*/*'})
           .timeout(timeout);
     } on Exception catch (e) {
       throw SubscriptionFetchException(

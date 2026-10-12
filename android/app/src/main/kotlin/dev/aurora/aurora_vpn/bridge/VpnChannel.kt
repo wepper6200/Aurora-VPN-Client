@@ -75,6 +75,12 @@ class VpnChannel(private val activity: Activity, messenger: BinaryMessenger) :
                 result.success(null)
             }
             "sdkInt" -> result.success(Build.VERSION.SDK_INT)
+            "deviceInfo" -> result.success(
+                mapOf(
+                    "model" to "${Build.MANUFACTURER} ${Build.MODEL}".trim(),
+                    "osVersion" to Build.VERSION.RELEASE,
+                ),
+            )
             else -> result.notImplemented()
         }
     }

@@ -28,6 +28,7 @@ class PrefsSettingsRepository implements SettingsRepository {
       ipv6: _bool('ipv6') ?? d.ipv6,
       logLevel: _enum(LogLevel.values, 'logLevel') ?? d.logLevel,
       autoUpdateSubscriptions: _bool('autoUpdateSubscriptions') ?? d.autoUpdateSubscriptions,
+      sendHwid: _bool('sendHwid') ?? d.sendHwid,
     );
   }
 
@@ -47,6 +48,7 @@ class PrefsSettingsRepository implements SettingsRepository {
       _prefs.setBool('${_p}ipv6', s.ipv6),
       _prefs.setString('${_p}logLevel', s.logLevel.name),
       _prefs.setBool('${_p}autoUpdateSubscriptions', s.autoUpdateSubscriptions),
+      _prefs.setBool('${_p}sendHwid', s.sendHwid),
     ]);
   }
 

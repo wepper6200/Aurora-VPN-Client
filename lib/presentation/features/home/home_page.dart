@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../../application/servers/servers_controller.dart';
+import '../../../application/vpn/connection_health.dart';
 import '../../../application/vpn/vpn_controller.dart';
 import '../../../core/l10n.dart';
 import '../../../domain/vpn/vpn_core.dart';
@@ -81,6 +82,7 @@ class HomePage extends ConsumerWidget {
               ),
               const SizedBox(height: AppSpacing.sm),
               ConnectionCaption(state: vpn),
+              const _IssueBanner(),
               const SizedBox(height: AppSpacing.xxl),
               if (server != null)
                 item(
@@ -180,6 +182,44 @@ class _NoServerCard extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+}
+
+/// Warns when the tunnel is up but traffic can't get through the server.
+class _IssueBanner extends ConsumerWidget {
+  const _IssueBanner();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final issue = ref.watch(connectionIssueProvider);
+    final connected = ref.watch(vpnStateProvider.select((s) => s.status == VpnStatus.connected));
+    final l10n = context.l10n;
+    final c = context.colors;
+    final text = switch (issue) {
+      ConnectionIssue.serverNotFound => l10n.homeIssueNotFound,
+      ConnectionIssue.serverUnreachable => l10n.homeIssueUnreachable,
+      null => null,
+    };
+    return AnimatedSize(
+      duration: AppDurations.medium,
+      curve: AppCurves.standard,
+      child: text == null || !connected
+          ? const SizedBox(width: double.infinity)
+          : Padding(
+              padding: const EdgeInsets.only(top: AppSpacing.md),
+              child: AppCard(
+                variant: AppCardVariant.elevated,
+                padding: const EdgeInsets.all(AppSpacing.md),
+                child: Row(
+                  children: [
+                    Icon(LucideIcons.triangleAlert, size: 20, color: c.warning),
+                    const SizedBox(width: AppSpacing.md),
+                    Expanded(child: Text(text, style: Theme.of(context).textTheme.bodySmall)),
+                  ],
+                ),
+              ),
+            ),
     );
   }
 }

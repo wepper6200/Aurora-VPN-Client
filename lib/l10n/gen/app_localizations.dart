@@ -273,6 +273,18 @@ abstract class AppLocalizations {
   /// **'Disconnect'**
   String get homeDisconnectA11y;
 
+  /// No description provided for @homeIssueNotFound.
+  ///
+  /// In en, this message translates to:
+  /// **'The server\'s address doesn\'t exist. Pick another server or update the subscription.'**
+  String get homeIssueNotFound;
+
+  /// No description provided for @homeIssueUnreachable.
+  ///
+  /// In en, this message translates to:
+  /// **'The server isn\'t responding. Try another server.'**
+  String get homeIssueUnreachable;
+
   /// No description provided for @homeNoServerTitle.
   ///
   /// In en, this message translates to:
@@ -1316,6 +1328,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Uses the interval provided by each subscription'**
   String get settingsAutoUpdateSub;
+
+  /// No description provided for @settingsHwid.
+  ///
+  /// In en, this message translates to:
+  /// **'Send device ID (HWID)'**
+  String get settingsHwid;
+
+  /// No description provided for @settingsHwidSub.
+  ///
+  /// In en, this message translates to:
+  /// **'Needed by providers that limit devices per subscription. A random ID of this app install, not a hardware serial.'**
+  String get settingsHwidSub;
 
   /// No description provided for @settingsLogging.
   ///

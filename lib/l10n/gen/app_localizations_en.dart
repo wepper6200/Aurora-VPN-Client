@@ -100,6 +100,13 @@ class AppLocalizationsEn extends AppLocalizations {
   String get homeDisconnectA11y => 'Disconnect';
 
   @override
+  String get homeIssueNotFound =>
+      'The server\'s address doesn\'t exist. Pick another server or update the subscription.';
+
+  @override
+  String get homeIssueUnreachable => 'The server isn\'t responding. Try another server.';
+
+  @override
   String get homeNoServerTitle => 'No server selected';
 
   @override
@@ -716,6 +723,13 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get settingsAutoUpdateSub => 'Uses the interval provided by each subscription';
+
+  @override
+  String get settingsHwid => 'Send device ID (HWID)';
+
+  @override
+  String get settingsHwidSub =>
+      'Needed by providers that limit devices per subscription. A random ID of this app install, not a hardware serial.';
 
   @override
   String get settingsLogging => 'Log level';

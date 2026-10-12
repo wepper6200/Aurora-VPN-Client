@@ -1,7 +1,9 @@
 import 'package:app_links/app_links.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:http/http.dart' as http;
 
 import '../core/clock.dart';
+import '../core/device_identity.dart';
 import '../core/platform.dart';
 import '../data/latency/tcp_latency_tester.dart';
 import '../data/mock/in_memory_repositories.dart';
@@ -14,6 +16,7 @@ import '../data/vpn/android_apps_source.dart';
 import '../data/vpn/android_vpn_controller.dart';
 import '../domain/servers/repositories.dart';
 import '../domain/vpn/vpn_core.dart';
+import 'settings/settings_controller.dart';
 
 // Composition root. `main()` overrides the async-initialized providers; tests
 // override repositories, network and platform pieces with fakes.
@@ -36,9 +39,34 @@ final subscriptionRepositoryProvider = Provider<SubscriptionRepository>(
   (ref) => DriftSubscriptionRepository(ref.watch(databaseProvider), ref.watch(fieldCipherProvider)),
 );
 
+/// Stable random id of this install + OS/model, for device-limited panels.
+final deviceIdentityProvider = FutureProvider<DeviceIdentity>((ref) async {
+  final prefs = ref.watch(sharedPreferencesProvider);
+  const key = 'device.hwid';
+  var hwid = prefs.getString(key);
+  if (hwid == null) {
+    hwid = DeviceIdentity.newHwid();
+    await prefs.setString(key, hwid);
+  }
+  return DeviceIdentity.load(ref.watch(appPlatformProvider), hwid);
+});
+
+/// Shared HTTP client (tests replace it with a mock).
+final httpClientProvider = Provider<http.Client>((ref) {
+  final c = http.Client();
+  ref.onDispose(c.close);
+  return c;
+});
+
 final subscriptionFetcherProvider = Provider<SubscriptionFetcher>((ref) {
-  final f = SubscriptionFetcher(userAgent: kUserAgent);
-  ref.onDispose(f.close);
+  final f = SubscriptionFetcher(
+    client: ref.watch(httpClientProvider),
+    userAgent: kUserAgent,
+    extraHeaders: () async {
+      if (!ref.read(settingsProvider).sendHwid) return const {};
+      return (await ref.read(deviceIdentityProvider.future)).headers;
+    },
+  );
   return f;
 });
 

@@ -40,6 +40,9 @@ class MockVpnCoreController implements VpnCoreController {
   @override
   Stream<LogEntry> get logs => _logs.stream;
 
+  /// Lets tests and previews inject core log lines.
+  void emitLog(LogLevel level, String message) => _log(level, message);
+
   void _log(LogLevel level, String message) =>
       _logs.add(LogEntry(time: _now(), level: level, message: message));
 

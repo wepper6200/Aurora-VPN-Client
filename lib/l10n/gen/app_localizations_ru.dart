@@ -100,6 +100,13 @@ class AppLocalizationsRu extends AppLocalizations {
   String get homeDisconnectA11y => 'Отключить';
 
   @override
+  String get homeIssueNotFound =>
+      'Адрес сервера не найден. Выберите другой сервер или обновите подписку.';
+
+  @override
+  String get homeIssueUnreachable => 'Сервер не отвечает. Попробуйте другой сервер.';
+
+  @override
   String get homeNoServerTitle => 'Сервер не выбран';
 
   @override
@@ -725,6 +732,13 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get settingsAutoUpdateSub => 'По интервалу, который задаёт каждая подписка';
+
+  @override
+  String get settingsHwid => 'Передавать ID устройства (HWID)';
+
+  @override
+  String get settingsHwidSub =>
+      'Нужен сервисам с лимитом устройств на подписку. Это случайный ID этой установки приложения, а не серийный номер.';
 
   @override
   String get settingsLogging => 'Уровень логирования';

@@ -40,6 +40,7 @@ class AppSettings {
     this.ipv6 = false,
     this.logLevel = LogLevel.info,
     this.autoUpdateSubscriptions = true,
+    this.sendHwid = true,
   });
 
   static const defaultDnsServer = 'https://1.1.1.1/dns-query';
@@ -58,6 +59,10 @@ class AppSettings {
   final LogLevel logLevel;
   final bool autoUpdateSubscriptions;
 
+  /// Send this install's random device id with subscription requests, for
+  /// providers that limit devices per subscription (Remnawave HWID).
+  final bool sendHwid;
+
   AppSettings copyWith({
     ThemePreference? theme,
     LanguagePreference? language,
@@ -72,6 +77,7 @@ class AppSettings {
     bool? ipv6,
     LogLevel? logLevel,
     bool? autoUpdateSubscriptions,
+    bool? sendHwid,
   }) {
     return AppSettings(
       theme: theme ?? this.theme,
@@ -87,6 +93,7 @@ class AppSettings {
       ipv6: ipv6 ?? this.ipv6,
       logLevel: logLevel ?? this.logLevel,
       autoUpdateSubscriptions: autoUpdateSubscriptions ?? this.autoUpdateSubscriptions,
+      sendHwid: sendHwid ?? this.sendHwid,
     );
   }
 
@@ -104,6 +111,7 @@ class AppSettings {
     ipv6,
     logLevel,
     autoUpdateSubscriptions,
+    sendHwid,
   ];
 
   @override

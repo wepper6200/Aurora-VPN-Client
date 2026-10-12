@@ -220,6 +220,14 @@ class SettingsPage extends ConsumerWidget {
                     value: s.autoUpdateSubscriptions,
                     onChanged: (v) => ctrl.update((s) => s.copyWith(autoUpdateSubscriptions: v)),
                   ),
+                  switchTile(
+                    icon: LucideIcons.fingerprint,
+                    color: c.accentEnd,
+                    title: l10n.settingsHwid,
+                    subtitle: l10n.settingsHwidSub,
+                    value: s.sendHwid,
+                    onChanged: (v) => ctrl.update((s) => s.copyWith(sendHwid: v)),
+                  ),
                 ],
               ),
 

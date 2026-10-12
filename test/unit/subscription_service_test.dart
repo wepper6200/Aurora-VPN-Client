@@ -44,9 +44,7 @@ Future<(ProviderContainer, FakePanel, InMemoryServerRepository)> setUpContainer(
       subscriptionRepositoryProvider.overrideWithValue(
         InMemorySubscriptionRepository(const [], servers),
       ),
-      subscriptionFetcherProvider.overrideWithValue(
-        SubscriptionFetcher(userAgent: 'AuroraVPN/test', client: panel.client),
-      ),
+      httpClientProvider.overrideWithValue(panel.client),
     ],
   );
   // Keep the streams alive like the UI does.
@@ -74,10 +72,30 @@ void main() {
     expect(sub.name, 'Panel');
     expect(sub.updateInterval, const Duration(hours: 3));
     expect(sub.usage!.remaining, 97);
-    expect(panel.requests.single.headers['User-Agent'], 'AuroraVPN/test');
+    expect(panel.requests.single.headers['User-Agent'], kUserAgent);
     final list = c.read(serversProvider).value!;
     expect(list.map((s) => s.name), ['A', 'B']);
     expect(list.every((s) => s.subscriptionId == sub.id), isTrue);
+  });
+
+  test('HWID headers: stable random id, only when enabled', () async {
+    final (c, panel, _) = await setUpContainer();
+    addTearDown(c.dispose);
+    panel.body = link('A', 'a.example.com');
+    final service = c.read(subscriptionServiceProvider);
+
+    await service.add(url: 'https://p.example.com/s1');
+    await service.add(url: 'https://p.example.com/s2');
+    final h1 = panel.requests[0].headers;
+    final h2 = panel.requests[1].headers;
+    expect(h1['x-hwid'], matches(RegExp(r'^[0-9a-f]{32}$')));
+    expect(h2['x-hwid'], h1['x-hwid']);
+    expect(h1['x-device-os'], isNotEmpty);
+    expect(h1['User-Agent'], kUserAgent);
+
+    await c.read(settingsProvider.notifier).update((s) => s.copyWith(sendHwid: false));
+    await service.add(url: 'https://p.example.com/s3');
+    expect(panel.requests[2].headers.keys.where((k) => k.startsWith('x-')), isEmpty);
   });
 
   test('refresh keeps ids and favorites of servers that are still present', () async {
