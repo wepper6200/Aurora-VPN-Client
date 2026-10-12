@@ -122,10 +122,8 @@ jobs:
           if-no-files-found: ignore
       - name: Inno Setup
         shell: pwsh
-        run: |
-          if (-not (Test-Path "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe")) {
-            choco install innosetup -y --no-progress
-          }
+        # upgrade = install or update: the script needs 6.3+ (x64compatible).
+        run: choco upgrade innosetup -y --no-progress
       - name: Build (portable zip + installer)
         shell: pwsh
         run: ./scripts/build_windows.ps1 -Installer -SkipFetch
