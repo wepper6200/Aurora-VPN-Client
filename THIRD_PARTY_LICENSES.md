@@ -6,6 +6,7 @@ bundles sing-box. Components that ship with the app:
 | Component | Use | License |
 |---|---|---|
 | [sing-box](https://github.com/SagerNet/sing-box) | VPN core (Android `libbox`, Windows `sing-box.exe`) | GPL-3.0-or-later **with additional terms** (see below) |
+| [Xray-core](https://github.com/XTLS/Xray-core) | Second core for XHTTP / Xray JSON (Android: in `libbox`, Windows: `xray.exe`) | MPL-2.0 (`core/LICENSE.xray`) |
 | [Wintun](https://www.wintun.net/) | Windows TUN driver (`wintun.dll`) | Prebuilt binaries license by WireGuard LLC — redistributable, unmodified |
 | [sing-geoip](https://github.com/SagerNet/sing-geoip) / [sing-geosite](https://github.com/SagerNet/sing-geosite) | Bundled `.srs` rule sets | GPL-3.0 (data from MaxMind GeoLite2 / v2fly domain-list-community) |
 | [Flutter](https://flutter.dev) and Dart packages | UI framework and libraries | BSD-3-Clause, MIT, Apache-2.0 (full list in the app: Settings → Licenses) |

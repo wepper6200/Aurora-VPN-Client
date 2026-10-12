@@ -68,3 +68,6 @@ test/**/failures/
 /native/corebridge/build/
 /native/corebridge/*.aar
 /native/corebridge/*.jar
+
+# Release outputs (scripts/build_*)
+/dist/
