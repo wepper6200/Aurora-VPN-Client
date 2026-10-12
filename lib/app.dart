@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import 'application/logs/logs_controller.dart';
 import 'application/settings/settings_controller.dart';
 import 'core/l10n.dart';
 import 'domain/settings/app_settings.dart';
@@ -14,6 +15,8 @@ class AuroraApp extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final router = ref.watch(routerProvider);
     final settings = ref.watch(settingsProvider);
+    // Collect core logs from launch, not from the first visit to the Logs tab.
+    ref.listen(logsProvider, (_, _) {});
     final code = settings.language.code;
 
     return MaterialApp.router(

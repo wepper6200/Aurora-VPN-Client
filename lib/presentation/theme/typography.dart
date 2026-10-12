@@ -25,6 +25,18 @@ abstract final class AppTypography {
     );
   }
 
+  /// Monospaced style for logs and raw configs.
+  static TextStyle mono(double size, {Color? color, FontWeight weight = FontWeight.w400}) {
+    return TextStyle(
+      fontFamily: 'JetBrainsMono',
+      fontSize: size,
+      fontWeight: weight,
+      fontVariations: [FontVariation('wght', weight.value.toDouble())],
+      height: 1.45,
+      color: color,
+    );
+  }
+
   static TextTheme textTheme({required Color primary, required Color secondary}) {
     return TextTheme(
       displayLarge: style(56, FontWeight.w800, height: 1.05, letterSpacing: -1.5, color: primary),

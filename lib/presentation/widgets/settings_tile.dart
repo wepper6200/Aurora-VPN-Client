@@ -39,7 +39,11 @@ class SettingsTile extends StatelessWidget {
     this.onTap,
     this.iconColor,
     this.showChevron,
+    this.padding = const EdgeInsets.symmetric(horizontal: AppSpacing.lg, vertical: AppSpacing.md),
   });
+
+  /// Use [EdgeInsets.zero] when the tile sits inside an already padded card.
+  final EdgeInsetsGeometry padding;
 
   final IconData icon;
   final String title;
@@ -60,7 +64,7 @@ class SettingsTile extends StatelessWidget {
       onTap: onTap,
       borderRadius: BorderRadius.circular(AppRadii.lg),
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg, vertical: AppSpacing.md),
+        padding: padding,
         child: Row(
           children: [
             IconBadge(icon: icon, size: 36, color: iconColor),

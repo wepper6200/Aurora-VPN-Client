@@ -7,63 +7,192 @@ import 'package:flutter_test/flutter_test.dart';
 
 import '../helpers/test_app.dart';
 
-/// Screen goldens. Regenerate after intentional UI changes:
+/// Screen goldens (also serve as the stage screenshots).
+/// Regenerate after intentional UI changes:
 ///   flutter test --update-goldens --tags golden
 void main() {
   setUpAll(loadAppFonts);
 
-  const variants = <String, ({AppPlatform platform, Size size, String theme})>{
-    'android_dark': (platform: AppPlatform.android, size: Size(412, 892), theme: 'dark'),
-    'android_light': (platform: AppPlatform.android, size: Size(412, 892), theme: 'light'),
-    'windows_dark': (platform: AppPlatform.windows, size: Size(460, 800), theme: 'dark'),
-  };
+  const phone = Size(412, 892);
+  const tallPhone = Size(412, 1500);
+  const window = Size(460, 800);
+  const tallWindow = Size(460, 1500);
 
-  const tabs = {'home': null, 'servers': 1, 'settings': 4};
-
-  for (final v in variants.entries) {
-    for (final tab in tabs.entries) {
-      testWidgets('${v.key} ${tab.key}', (tester) async {
-        await pumpApp(
-          tester,
-          platform: v.value.platform,
-          size: v.value.size,
-          prefs: {'settings.language': 'ru', 'settings.theme': v.value.theme},
-        );
-        if (tab.value != null) {
-          await _selectTab(tester, tab.value!, v.value.platform);
-        }
-        await expectLater(
-          find.byType(MaterialApp),
-          matchesGoldenFile('goldens/${v.key}_${tab.key}.png'),
-        );
-      });
+  Future<void> tab(WidgetTester tester, String label, {bool settle = true}) async {
+    await tester.tap(find.text(label).last);
+    if (settle) {
+      await tester.pumpAndSettle();
+    } else {
+      await pumpFor(tester, const Duration(milliseconds: 600));
     }
   }
 
-  testWidgets('android_dark design_system', (tester) async {
-    await pumpApp(tester, prefs: {'settings.language': 'ru', 'settings.theme': 'dark'});
-    await _selectTab(tester, 4, AppPlatform.android);
-    await tester.tap(find.text('Дизайн-система'));
-    // Skeletons shimmer forever, so pump a fixed amount instead of settling.
-    for (var i = 0; i < 20; i++) {
-      await tester.pump(const Duration(milliseconds: 100));
-    }
-    tester.view.physicalSize = const Size(412, 2000);
-    // Newly revealed items run their staggered entrance (≤ 450ms + 420ms).
-    for (var i = 0; i < 12; i++) {
-      await tester.pump(const Duration(milliseconds: 100));
-    }
-    await expectLater(
-      find.byType(MaterialApp),
-      matchesGoldenFile('goldens/android_dark_design_system.png'),
-    );
-  });
-}
+  void golden(
+    String name, {
+    AppPlatform platform = AppPlatform.android,
+    Size size = phone,
+    String theme = 'dark',
+    Map<String, Object> prefs = const {},
+    bool settle = true,
+    Future<void> Function(WidgetTester tester)? setup,
+  }) {
+    testWidgets(name, (tester) async {
+      await pumpApp(
+        tester,
+        platform: platform,
+        size: size,
+        fixedClock: true,
+        prefs: {'settings.language': 'ru', 'settings.theme': theme, ...prefs},
+      );
+      await setup?.call(tester);
+      if (settle) await tester.pumpAndSettle();
+      await expectLater(find.byType(MaterialApp), matchesGoldenFile('goldens/$name.png'));
+    });
+  }
 
-Future<void> _selectTab(WidgetTester tester, int index, AppPlatform platform) async {
-  final destinations = platform.isDesktop
-      ? find.descendant(of: find.byType(NavigationRail), matching: find.byType(Icon))
-      : find.byType(NavigationDestination);
-  await tester.tap(destinations.at(index));
-  await tester.pumpAndSettle();
+  // Onboarding
+  golden('onboarding_1', prefs: {'settings.onboardingDone': false});
+  golden(
+    'onboarding_3_light',
+    theme: 'light',
+    prefs: {'settings.onboardingDone': false},
+    setup: (t) async {
+      await t.tap(find.text('Далее'));
+      await t.pumpAndSettle();
+      await t.tap(find.text('Далее'));
+      await t.pumpAndSettle();
+    },
+  );
+
+  // Home
+  golden('home_disconnected');
+  golden('home_disconnected_light', theme: 'light');
+  golden(
+    'home_connected',
+    settle: false,
+    setup: (t) => connect(t, traffic: const Duration(seconds: 8)),
+  );
+  golden(
+    'home_connected_light',
+    theme: 'light',
+    settle: false,
+    setup: (t) => connect(t, traffic: const Duration(seconds: 8)),
+  );
+  golden(
+    'home_error',
+    prefs: {'servers.selected': 's6'},
+    setup: (t) => connect(t, traffic: Duration.zero),
+  );
+  golden(
+    'windows_home_connected',
+    platform: AppPlatform.windows,
+    size: window,
+    settle: false,
+    setup: (t) => connect(t, traffic: const Duration(seconds: 8)),
+  );
+
+  // Servers
+  golden('servers', size: tallPhone, setup: (t) => tab(t, 'Серверы'));
+  golden('servers_light', theme: 'light', size: tallPhone, setup: (t) => tab(t, 'Серверы'));
+  golden(
+    'servers_latency',
+    size: tallPhone,
+    setup: (t) async {
+      await tab(t, 'Серверы');
+      await t.tap(find.byTooltip('Проверить задержку'));
+      await pumpFor(t, const Duration(seconds: 3));
+    },
+  );
+  golden(
+    'servers_add_sheet',
+    setup: (t) async {
+      await tab(t, 'Серверы');
+      await t.tap(find.byTooltip('Добавить'));
+      await t.pumpAndSettle();
+    },
+  );
+  golden(
+    'subscription_editor',
+    setup: (t) async {
+      await tab(t, 'Серверы');
+      await t.tap(find.byTooltip('Добавить'));
+      await t.pumpAndSettle();
+      await t.tap(find.text('Подписка по ссылке'));
+      await t.pumpAndSettle();
+      await t.enterText(find.byType(TextFormField).first, 'https://sub.example.com/abc');
+      FocusManager.instance.primaryFocus?.unfocus();
+    },
+  );
+  golden(
+    'server_editor',
+    size: tallPhone,
+    setup: (t) async {
+      await tab(t, 'Серверы');
+      await t.tap(find.byTooltip('Добавить'));
+      await t.pumpAndSettle();
+      await t.tap(find.text('Вручную'));
+      await t.pumpAndSettle();
+      await t.tap(find.text('Reality'));
+      await t.pumpAndSettle();
+    },
+  );
+  golden(
+    'windows_servers',
+    platform: AppPlatform.windows,
+    size: tallWindow,
+    setup: (t) => tab(t, 'Серверы'),
+  );
+
+  // Routing
+  golden('routing', size: tallPhone, setup: (t) => tab(t, 'Маршруты'));
+  golden('routing_light', theme: 'light', size: tallPhone, setup: (t) => tab(t, 'Маршруты'));
+  golden(
+    'split_apps',
+    size: tallPhone,
+    prefs: {
+      'routing.splitMode': 'exclude',
+      'routing.splitApps': ['org.example.bank', 'org.example.maps'],
+    },
+    setup: (t) async {
+      await tab(t, 'Маршруты');
+      await t.tap(find.text('Приложения'));
+      await t.pumpAndSettle();
+    },
+  );
+
+  // Logs
+  golden(
+    'logs',
+    settle: false,
+    setup: (t) async {
+      await connect(t, traffic: const Duration(seconds: 12));
+      await tab(t, 'Логи', settle: false);
+    },
+  );
+
+  // Settings
+  golden('settings', size: const Size(412, 2100), setup: (t) => tab(t, 'Настройки'));
+  golden(
+    'settings_light',
+    theme: 'light',
+    size: const Size(412, 2100),
+    setup: (t) => tab(t, 'Настройки'),
+  );
+  golden(
+    'windows_settings',
+    platform: AppPlatform.windows,
+    size: const Size(460, 2300),
+    setup: (t) => tab(t, 'Настройки'),
+  );
+
+  golden(
+    'design_system',
+    size: const Size(412, 2000),
+    settle: false,
+    setup: (t) async {
+      await tab(t, 'Настройки');
+      await t.tap(find.text('Дизайн-система'));
+      await pumpFor(t, const Duration(seconds: 2));
+    },
+  );
 }

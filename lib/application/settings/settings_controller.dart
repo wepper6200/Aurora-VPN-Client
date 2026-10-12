@@ -25,6 +25,9 @@ class SettingsController extends Notifier<AppSettings> {
     await ref.read(settingsRepositoryProvider).save(next);
   }
 
+  /// Applies an arbitrary change, e.g. `update((s) => s.copyWith(mtu: 1500))`.
+  Future<void> update(AppSettings Function(AppSettings s) change) => _update(change(state));
+
   Future<void> setTheme(ThemePreference theme) => _update(state.copyWith(theme: theme));
 
   Future<void> setLanguage(LanguagePreference language) =>

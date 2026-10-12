@@ -6,8 +6,10 @@ import 'package:flutter_test/flutter_test.dart';
 import '../helpers/test_app.dart';
 
 void main() {
+  const en = {'settings.language': 'en'};
+
   testWidgets('android layout uses a bottom navigation bar', (tester) async {
-    await pumpApp(tester, prefs: {'settings.language': 'en'});
+    await pumpApp(tester, prefs: en);
 
     expect(find.byType(NavigationBar), findsOneWidget);
     expect(find.byType(NavigationRail), findsNothing);
@@ -15,28 +17,26 @@ void main() {
   });
 
   testWidgets('windows layout uses a rail and a custom title bar', (tester) async {
-    await pumpApp(
-      tester,
-      platform: AppPlatform.windows,
-      size: const Size(460, 800),
-      prefs: {'settings.language': 'en'},
-    );
+    await pumpApp(tester, platform: AppPlatform.windows, size: const Size(460, 800), prefs: en);
 
     expect(find.byType(NavigationRail), findsOneWidget);
     expect(find.byType(NavigationBar), findsNothing);
     expect(find.byType(WindowTitleBar), findsOneWidget);
   });
 
-  testWidgets('tabs switch between pages', (tester) async {
-    await pumpApp(tester, prefs: {'settings.language': 'en'});
+  testWidgets('tabs switch and the previous tab fades out', (tester) async {
+    await pumpApp(tester, prefs: en);
 
     await tester.tap(find.text('Servers'));
     await tester.pumpAndSettle();
-    expect(find.text('No servers yet'), findsOneWidget);
+    expect(find.text('Search by name, address or protocol'), findsOneWidget);
 
     // The previous tab stays mounted but must be fully faded out.
+    final branchOpacity = find
+        .ancestor(of: find.text('Tap to connect'), matching: find.byType(AnimatedOpacity))
+        .first;
     final homeFade = tester.widget<FadeTransition>(
-      find.ancestor(of: find.text('No server selected'), matching: find.byType(FadeTransition)).first,
+      find.descendant(of: branchOpacity, matching: find.byType(FadeTransition)).first,
     );
     expect(homeFade.opacity.value, 0);
 
@@ -45,20 +45,27 @@ void main() {
     expect(find.text('Nothing here yet'), findsOneWidget);
   });
 
-  testWidgets('theme and language can be changed in settings', (tester) async {
-    await pumpApp(tester, prefs: {'settings.language': 'en'});
+  testWidgets('first launch shows onboarding and finishes on the home tab', (tester) async {
+    await pumpApp(tester, prefs: {...en, 'settings.onboardingDone': false});
 
-    await tester.tap(find.text('Settings'));
+    expect(find.text('Your VPN, your rules'), findsOneWidget);
+    await tester.tap(find.text('Next'));
+    await tester.pumpAndSettle();
+    expect(find.text('Add a subscription'), findsOneWidget);
+    await tester.tap(find.text('Next'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Get started'));
     await tester.pumpAndSettle();
 
-    expect(Theme.of(tester.element(find.text('Theme'))).brightness, Brightness.dark);
-    await tester.tap(find.text('Light'));
-    await tester.pumpAndSettle();
-    expect(Theme.of(tester.element(find.text('Theme'))).brightness, Brightness.light);
+    expect(find.byType(NavigationBar), findsOneWidget);
+    expect(find.text('Tap to connect'), findsOneWidget);
+  });
 
-    await tester.tap(find.text('Русский'));
+  testWidgets('onboarding can be skipped', (tester) async {
+    await pumpApp(tester, prefs: {...en, 'settings.onboardingDone': false});
+
+    await tester.tap(find.text('Skip'));
     await tester.pumpAndSettle();
-    expect(find.text('Настройки'), findsWidgets);
-    expect(find.text('Тема'), findsOneWidget);
+    expect(find.byType(NavigationBar), findsOneWidget);
   });
 }

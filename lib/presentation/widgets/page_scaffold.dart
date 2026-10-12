@@ -16,7 +16,12 @@ class PageScaffold extends StatelessWidget {
     required this.slivers,
     this.floatingActionButton,
     this.opaque = false,
+    this.bottomSpacing = true,
   });
+
+  /// Adds scroll room below the last sliver (for the nav bar / home indicator).
+  /// Pages whose last sliver fills the viewport handle insets themselves.
+  final bool bottomSpacing;
 
   final String title;
   final String? subtitle;
@@ -56,9 +61,10 @@ class PageScaffold extends StatelessWidget {
                   ),
                 ),
                 ...slivers,
-                SliverToBoxAdapter(
-                  child: SizedBox(height: AppSpacing.huge + MediaQuery.paddingOf(context).bottom),
-                ),
+                if (bottomSpacing)
+                  SliverToBoxAdapter(
+                    child: SizedBox(height: AppSpacing.huge + MediaQuery.paddingOf(context).bottom),
+                  ),
               ],
             ),
           ),
