@@ -3,3 +3,5 @@ tags:
     description: Pixel comparisons of whole screens (platform-sensitive font rendering).
   core:
     description: Validates generated configs with the real sing-box binary (needs scripts/fetch_core).
+  tool:
+    description: Generators run by hand (tool/icons renders the app/tray icons).

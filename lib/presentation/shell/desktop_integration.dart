@@ -35,7 +35,6 @@ class _DesktopIntegrationState extends ConsumerState<DesktopIntegration>
     trayManager.addListener(this);
     windowManager.addListener(this);
     unawaited(windowManager.setPreventClose(true));
-    unawaited(trayManager.setIcon('assets/tray/tray.ico'));
     WidgetsBinding.instance.addPostFrameCallback((_) => _refreshTray());
     unawaited(WindowsAutostart.apply(ref.read(settingsProvider).launchAtStartup));
   }
@@ -52,6 +51,10 @@ class _DesktopIntegrationState extends ConsumerState<DesktopIntegration>
     final l10n = context.l10n;
     final vpn = ref.read(vpnStateProvider);
     final active = vpn.isActive;
+    // Colour mark while the tunnel is up, grey when it is off.
+    await trayManager.setIcon(
+      vpn.status == VpnStatus.connected ? 'assets/tray/tray.ico' : 'assets/tray/tray_off.ico',
+    );
     await trayManager.setToolTip(
       '${l10n.appTitle} — ${active ? l10n.statusConnected : l10n.statusDisconnected}',
     );

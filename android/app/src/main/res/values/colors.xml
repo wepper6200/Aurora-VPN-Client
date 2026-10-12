@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- AppColors.dark.background: no white flash before the first frame. -->
+    <color name="splash_background">#0A0E19</color>
+</resources>
