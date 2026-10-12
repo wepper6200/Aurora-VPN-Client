@@ -1,0 +1,73 @@
+{
+  "@@locale": "ru",
+  "appTitle": "Aurora VPN",
+
+  "navHome": "Главная",
+  "navServers": "Серверы",
+  "navRouting": "Маршруты",
+  "navLogs": "Логи",
+  "navSettings": "Настройки",
+
+  "windowMinimize": "Свернуть",
+  "windowMaximize": "Развернуть",
+  "windowRestore": "Восстановить",
+  "windowClose": "Закрыть",
+
+  "homeTitle": "Aurora",
+  "homeSubtitle": "Приватно, быстро, под вашим контролем.",
+  "homeNoServerTitle": "Сервер не выбран",
+  "homeNoServerBody": "Добавьте подписку или конфиг, чтобы подключиться.",
+
+  "serversTitle": "Серверы",
+  "serversEmptyTitle": "Серверов пока нет",
+  "serversEmptyBody": "Добавьте ссылку на подписку, вставьте конфиг из буфера обмена или отсканируйте QR-код.",
+  "serversAddSubscription": "Добавить подписку",
+
+  "routingTitle": "Маршрутизация",
+  "routingSubtitle": "Выберите, какой трафик идёт через туннель.",
+
+  "logsTitle": "Логи",
+  "logsEmptyTitle": "Пока пусто",
+  "logsEmptyBody": "Логи ядра появятся здесь после подключения.",
+
+  "settingsTitle": "Настройки",
+  "settingsAppearance": "Внешний вид",
+  "settingsTheme": "Тема",
+  "settingsLanguage": "Язык",
+  "settingsAbout": "О приложении",
+  "settingsDesignSystem": "Дизайн-система",
+  "settingsDesignSystemSubtitle": "Компоненты, цвета и типографика",
+
+  "themeSystem": "Системная",
+  "themeLight": "Светлая",
+  "themeDark": "Тёмная",
+
+  "languageSystem": "Системный",
+  "languageEnglish": "English",
+  "languageRussian": "Русский",
+
+  "dsTitle": "Дизайн-система",
+  "dsColors": "Цвета",
+  "dsTypography": "Типографика",
+  "dsButtons": "Кнопки",
+  "dsCards": "Карточки",
+  "dsStatus": "Статусы",
+  "dsFeedback": "Загрузка и пустые состояния",
+  "dsPrimaryAction": "Подключить",
+  "dsSecondaryAction": "Импорт",
+  "dsAccentAction": "Тест задержки",
+  "dsDangerAction": "Удалить",
+  "dsCardSolid": "Обычная карточка",
+  "dsCardElevated": "Приподнятая карточка",
+  "dsCardGlass": "Стеклянная карточка",
+  "dsCardSelected": "Выбранная карточка",
+  "dsCardBody": "Скруглённые углы, мягкая тень и тонкая обводка.",
+  "dsTypographySample": "Съешь же ещё этих мягких булок",
+
+  "statusDisconnected": "Отключено",
+  "statusConnecting": "Подключение",
+  "statusConnected": "Подключено",
+  "statusError": "Ошибка",
+
+  "retry": "Повторить"
+}

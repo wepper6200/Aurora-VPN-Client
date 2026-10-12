@@ -1,0 +1,73 @@
+{
+  "@@locale": "en",
+  "appTitle": "Aurora VPN",
+
+  "navHome": "Home",
+  "navServers": "Servers",
+  "navRouting": "Routing",
+  "navLogs": "Logs",
+  "navSettings": "Settings",
+
+  "windowMinimize": "Minimize",
+  "windowMaximize": "Maximize",
+  "windowRestore": "Restore",
+  "windowClose": "Close",
+
+  "homeTitle": "Aurora",
+  "homeSubtitle": "Private, fast, yours.",
+  "homeNoServerTitle": "No server selected",
+  "homeNoServerBody": "Add a subscription or a config to start connecting.",
+
+  "serversTitle": "Servers",
+  "serversEmptyTitle": "No servers yet",
+  "serversEmptyBody": "Add a subscription link, paste a config from the clipboard or scan a QR code.",
+  "serversAddSubscription": "Add subscription",
+
+  "routingTitle": "Routing",
+  "routingSubtitle": "Choose what goes through the tunnel.",
+
+  "logsTitle": "Logs",
+  "logsEmptyTitle": "Nothing here yet",
+  "logsEmptyBody": "Core logs will stream here once you connect.",
+
+  "settingsTitle": "Settings",
+  "settingsAppearance": "Appearance",
+  "settingsTheme": "Theme",
+  "settingsLanguage": "Language",
+  "settingsAbout": "About",
+  "settingsDesignSystem": "Design system",
+  "settingsDesignSystemSubtitle": "Components, colors and typography",
+
+  "themeSystem": "System",
+  "themeLight": "Light",
+  "themeDark": "Dark",
+
+  "languageSystem": "System",
+  "languageEnglish": "English",
+  "languageRussian": "Русский",
+
+  "dsTitle": "Design system",
+  "dsColors": "Colors",
+  "dsTypography": "Typography",
+  "dsButtons": "Buttons",
+  "dsCards": "Cards",
+  "dsStatus": "Status",
+  "dsFeedback": "Loading & empty states",
+  "dsPrimaryAction": "Connect",
+  "dsSecondaryAction": "Import",
+  "dsAccentAction": "Test latency",
+  "dsDangerAction": "Delete",
+  "dsCardSolid": "Solid card",
+  "dsCardElevated": "Elevated card",
+  "dsCardGlass": "Glass card",
+  "dsCardSelected": "Selected card",
+  "dsCardBody": "Rounded corners, soft shadow and a hairline border.",
+  "dsTypographySample": "The quick brown fox",
+
+  "statusDisconnected": "Disconnected",
+  "statusConnecting": "Connecting",
+  "statusConnected": "Connected",
+  "statusError": "Error",
+
+  "retry": "Retry"
+}
