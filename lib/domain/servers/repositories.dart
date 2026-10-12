@@ -23,6 +23,9 @@ abstract interface class SubscriptionRepository {
 
 abstract interface class InstalledAppsSource {
   Future<List<InstalledApp>> load({bool includeSystem = false});
+
+  /// PNG icon, or `null` if unavailable.
+  Future<List<int>?> icon(String packageName);
 }
 
 /// Measures latency to a server without bringing the tunnel up.

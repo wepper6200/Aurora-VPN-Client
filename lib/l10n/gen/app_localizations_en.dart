@@ -91,6 +91,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get homeErrorNoServer => 'Choose a server first';
 
   @override
+  String get homeErrorPermission => 'VPN permission was not granted';
+
+  @override
   String get homeConnectA11y => 'Connect';
 
   @override

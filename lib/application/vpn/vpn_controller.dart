@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../domain/vpn/vpn_core.dart';
 import '../di.dart';
 import '../servers/servers_controller.dart';
+import 'core_config_service.dart';
 
 final vpnStateProvider = NotifierProvider<VpnController, VpnState>(VpnController.new);
 
@@ -22,8 +23,15 @@ class VpnController extends Notifier<VpnState> {
       state = const VpnState(status: VpnStatus.error, error: 'no-server');
       return;
     }
-    // Stage 3 replaces the placeholder with the generated sing-box config.
-    await ref.read(vpnCoreProvider).start(CoreStartRequest(serverId: server.id, configJson: '{}'));
+    state = VpnState(status: VpnStatus.connecting, serverId: server.id);
+    final CoreStartRequest request;
+    try {
+      request = await ref.read(coreConfigServiceProvider).build(server);
+    } catch (e) {
+      state = VpnState(status: VpnStatus.error, serverId: server.id, error: '$e');
+      return;
+    }
+    await ref.read(vpnCoreProvider).start(request);
   }
 
   Future<void> disconnect() => ref.read(vpnCoreProvider).stop();

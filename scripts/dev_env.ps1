@@ -22,7 +22,8 @@ $prepend = @(
   "$tools\gopath\bin",
   "$tools\android-sdk\cmdline-tools\latest\bin",
   "$tools\android-sdk\platform-tools",
-  "$tools\inno-setup"
+  "$tools\inno-setup",
+  "$tools\gh\bin"
 )
 $rest = ($env:Path -split ';') | Where-Object { $_ -and ($prepend -notcontains $_) }
 $env:Path = (($prepend + $rest) -join ';')

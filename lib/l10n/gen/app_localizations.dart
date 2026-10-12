@@ -255,6 +255,12 @@ abstract class AppLocalizations {
   /// **'Choose a server first'**
   String get homeErrorNoServer;
 
+  /// No description provided for @homeErrorPermission.
+  ///
+  /// In en, this message translates to:
+  /// **'VPN permission was not granted'**
+  String get homeErrorPermission;
+
   /// No description provided for @homeConnectA11y.
   ///
   /// In en, this message translates to:

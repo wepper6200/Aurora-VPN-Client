@@ -91,6 +91,9 @@ class AppLocalizationsRu extends AppLocalizations {
   String get homeErrorNoServer => 'Сначала выберите сервер';
 
   @override
+  String get homeErrorPermission => 'Нет разрешения на подключение VPN';
+
+  @override
   String get homeConnectA11y => 'Подключить';
 
   @override

@@ -52,3 +52,8 @@ class RoutingController extends Notifier<RoutingSettings> {
 final installedAppsProvider = FutureProvider.family<List<InstalledApp>, bool>(
   (ref, includeSystem) => ref.watch(installedAppsSourceProvider).load(includeSystem: includeSystem),
 );
+
+/// PNG icon bytes per package (cached for the session).
+final appIconProvider = FutureProvider.family<List<int>?, String>(
+  (ref, pkg) => ref.watch(installedAppsSourceProvider).icon(pkg),
+);

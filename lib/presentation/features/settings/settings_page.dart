@@ -7,6 +7,7 @@ import 'package:package_info_plus/package_info_plus.dart';
 import '../../../application/settings/settings_controller.dart';
 import '../../../core/l10n.dart';
 import '../../../core/platform.dart';
+import '../../../data/vpn/android_vpn_controller.dart';
 import '../../../domain/logs/log_entry.dart';
 import '../../../domain/settings/app_settings.dart';
 import '../../router/app_router.dart';
@@ -127,8 +128,7 @@ class SettingsPage extends ConsumerWidget {
                       iconColor: c.danger,
                       title: l10n.settingsKillSwitch,
                       subtitle: l10n.settingsKillSwitchAndroidSub,
-                      // Stage 6: opens the system "Always-on VPN" screen.
-                      onTap: () {},
+                      onTap: AndroidVpnController.openSystemVpnSettings,
                       trailing: Icon(LucideIcons.externalLink, size: 18, color: c.textTertiary),
                     ),
                 ],

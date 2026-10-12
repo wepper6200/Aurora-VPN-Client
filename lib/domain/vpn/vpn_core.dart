@@ -45,9 +45,12 @@ class TrafficSample {
 
 /// Everything the core needs to bring the tunnel up.
 class CoreStartRequest {
-  const CoreStartRequest({required this.serverId, required this.configJson});
+  const CoreStartRequest({required this.serverId, required this.configJson, this.label = ''});
 
   final String serverId;
+
+  /// Human-readable server name (shown in the system notification).
+  final String label;
 
   /// Complete sing-box configuration.
   final String configJson;

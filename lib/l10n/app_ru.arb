@@ -32,6 +32,7 @@
   "homeTapToConnect": "Нажмите, чтобы подключиться",
   "homeConnectingHint": "Устанавливаем защищённый туннель…",
   "homeErrorNoServer": "Сначала выберите сервер",
+  "homeErrorPermission": "Нет разрешения на подключение VPN",
   "homeConnectA11y": "Подключить",
   "homeDisconnectA11y": "Отключить",
   "homeNoServerTitle": "Сервер не выбран",

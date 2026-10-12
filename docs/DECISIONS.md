@@ -150,3 +150,47 @@ lib/
 - Один `ImportService` для буфера обмена, QR (`mobile_scanner`, только Android) и deep-link (`app_links`,
   Android intent-filter для всех схем). Одиночный http(s)-URL из буфера открывает форму подписки, всё остальное
   импортируется сразу. Повторно ту же подписку не добавляет.
+
+### Material You
+- Dynamic color (цвета из обоев Android 12+) **не добавляем** — решение заказчика. Палитра всегда фирменная.
+
+
+## Этап 4 — ядро на Android (libbox + VpnService)
+
+### Сборка libbox
+- `scripts/build_libbox.ps1` / `.sh`: исходники sing-box по закреплённому тегу, gomobile-форк `sagernet/gomobile`
+  той версии, что указана в `go.mod` sing-box. `-androidapi 24`, ABI arm64 / armv7 / x86_64.
+- Теги сборки: только нужное клиенту (`with_gvisor,with_quic,with_wireguard,with_utls,with_clash_api` + linkname-теги).
+  Без Tailscale, OpenVPN, OpenConnect, USB/IP и naive: в официальном наборе их много, AAR был бы в разы больше.
+- В Windows-версии gomobile падает на скрытых переменных окружения `=C:=…`. Скрипт под Windows собирает gomobile
+  с однострочной правкой `env.go`: такие переменные пропускаются так же, как в соседнем цикле. Если upstream изменит
+  файл, скрипт явно остановится, а не наложит правку молча.
+- PowerShell 5.1 разрывает аргументы вида `-javapkg=io.x` на точке, поэтому все флаги gomobile в кавычках.
+- NDK один на всё: `28.2.13676358` (та же версия, что у Flutter), а не рекомендованный sing-box 28.0. Сборка проверена.
+
+### Нативный слой (Kotlin, `dev.aurora.aurora_vpn`)
+- `AuroraVpnService`: VpnService + `PlatformInterface` + `CommandServerHandler` libbox 1.14.3. Сервер команд работает
+  через unix-сокет в приватном каталоге приложения, TCP-порт не открывается.
+- Монитор сети по образцу sing-box-for-android / shadowsocks-android: `registerBestMatchingNetworkCallback` (31+) или
+  `requestNetwork` (28–30), чтобы видеть реальную сеть под VPN. Локальный DNS через `DnsResolver` (29+).
+- Активный конфиг пишется в `filesDir/active-config.json`, а не в Intent. Always-on VPN перезапускает туннель
+  без UI; в манифесте `SUPPORTS_ALWAYS_ON`.
+- Foreground-сервис `specialUse` (Android 14+), уведомление: имя сервера, скорость ↓/↑ (раз в 2 с), кнопка «Отключить».
+- Мост: `aurora/vpn` (prepare / start / stop / state / openVpnSettings), `aurora/vpn/events` (статус, трафик, логи из
+  `CommandClient`), `aurora/apps` (список приложений с иконками для раздельного туннелирования).
+- Kill switch на Android — системный: кнопка в настройках открывает экран VPN, где включаются «Постоянный VPN» и
+  «Блокировать соединения без VPN». Приложение не может включить это само, это ограничение Android.
+- Резервное копирование данных приложения запрещено (`allowBackup=false`, data extraction rules): конфиги и ключи
+  не уходят в облако и при переносе на новое устройство.
+
+### Размер APK
+- Нативные библиотеки сжаты (`useLegacyPackaging = true`): `libbox.so` 57 → ~20 МБ, APK на одну ABI ~33 МБ.
+  APK скачивают напрямую, поэтому размер загрузки важнее экономии при установке.
+
+### Логи
+- Маскировка (`LogMask`) применяется ещё до UI, буфера обмена и экспорта: UUID, `password/token/uuid/…=значение`,
+  учётные данные в URL, длинные base64/hex-блоки.
+
+### Windows-разработка с разных дисков
+- Проект на C:, pub-кэш на D: — инкрементальная компиляция Kotlin падает на путях с разными корнями, поэтому
+  `kotlin.incremental=false`.

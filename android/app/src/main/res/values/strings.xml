@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name_fallback" translatable="false">Aurora VPN</string>
+    <string name="notification_channel">VPN status</string>
+    <string name="notification_connecting">Connecting…</string>
+    <string name="notification_connected">Connected</string>
+    <string name="notification_disconnect">Disconnect</string>
+    <string name="error_no_config">No server selected</string>
+</resources>

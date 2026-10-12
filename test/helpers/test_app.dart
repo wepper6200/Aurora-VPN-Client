@@ -10,6 +10,7 @@ import 'package:aurora_vpn/data/subscriptions/subscription_fetcher.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 import 'package:aurora_vpn/application/settings/settings_controller.dart';
+import 'package:aurora_vpn/application/vpn/core_config_service.dart';
 import 'package:aurora_vpn/core/clock.dart';
 import 'package:aurora_vpn/core/platform.dart';
 import 'package:aurora_vpn/presentation/features/home/widgets/connect_button.dart';
@@ -94,6 +95,9 @@ Future<ProviderContainer> pumpApp(
         ),
         latencyTesterProvider.overrideWithValue(const StaticLatencyTester(DemoData.latencies)),
         deepLinksProvider.overrideWithValue(const Stream<Uri>.empty()),
+        coreEnvironmentProvider.overrideWith(
+          (ref) async => const CoreEnvironment(ruleSetDir: '/rules', dataDir: '/data'),
+        ),
         subscriptionFetcherProvider.overrideWithValue(
           fetcher ??
               SubscriptionFetcher(

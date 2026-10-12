@@ -80,7 +80,11 @@ class ConnectionCaption extends StatelessWidget {
       ),
       VpnStatus.connecting => Text(l10n.homeConnectingHint, style: subStyle),
       VpnStatus.error => Text(
-        state.error == 'no-server' ? l10n.homeErrorNoServer : (state.error ?? l10n.unknownError),
+        switch (state.error) {
+          'no-server' => l10n.homeErrorNoServer,
+          'permission-denied' => l10n.homeErrorPermission,
+          final e => e ?? l10n.unknownError,
+        },
         style: subStyle.copyWith(color: c.danger),
         textAlign: TextAlign.center,
         maxLines: 2,

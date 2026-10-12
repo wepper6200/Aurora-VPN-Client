@@ -169,15 +169,15 @@ class _SplitAppsPageState extends ConsumerState<SplitAppsPage> {
   }
 }
 
-class _AppIcon extends StatelessWidget {
+class _AppIcon extends ConsumerWidget {
   const _AppIcon({required this.app});
 
   final InstalledApp app;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final c = context.colors;
-    final icon = app.icon;
+    final icon = app.icon ?? ref.watch(appIconProvider(app.packageName)).value;
     if (icon != null) {
       return ClipRRect(
         borderRadius: BorderRadius.circular(AppRadii.sm),

@@ -101,4 +101,7 @@ class StaticInstalledAppsSource implements InstalledAppsSource {
   @override
   Future<List<InstalledApp>> load({bool includeSystem = false}) async =>
       includeSystem ? apps : apps.where((a) => !a.isSystem).toList();
+
+  @override
+  Future<List<int>?> icon(String packageName) async => null;
 }

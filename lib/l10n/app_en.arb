@@ -32,6 +32,7 @@
   "homeTapToConnect": "Tap to connect",
   "homeConnectingHint": "Establishing a secure tunnel…",
   "homeErrorNoServer": "Choose a server first",
+  "homeErrorPermission": "VPN permission was not granted",
   "homeConnectA11y": "Connect",
   "homeDisconnectA11y": "Disconnect",
   "homeNoServerTitle": "No server selected",

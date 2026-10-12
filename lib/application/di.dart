@@ -2,6 +2,7 @@ import 'package:app_links/app_links.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../core/clock.dart';
+import '../core/platform.dart';
 import '../data/latency/tcp_latency_tester.dart';
 import '../data/mock/in_memory_repositories.dart';
 import '../data/mock/mock_vpn_core.dart';
@@ -9,6 +10,8 @@ import '../data/storage/database.dart';
 import '../data/storage/drift_repositories.dart';
 import '../data/storage/field_cipher.dart';
 import '../data/subscriptions/subscription_fetcher.dart';
+import '../data/vpn/android_apps_source.dart';
+import '../data/vpn/android_vpn_controller.dart';
 import '../domain/servers/repositories.dart';
 import '../domain/vpn/vpn_core.dart';
 
@@ -41,17 +44,22 @@ final subscriptionFetcherProvider = Provider<SubscriptionFetcher>((ref) {
 
 final latencyTesterProvider = Provider<LatencyTester>((ref) => const TcpLatencyTester());
 
-/// Android package list arrives with the native bridge (stage 6).
 final installedAppsSourceProvider = Provider<InstalledAppsSource>(
-  (ref) => const StaticInstalledAppsSource([]),
+  (ref) => ref.watch(appPlatformProvider).isMobile
+      ? const AndroidAppsSource()
+      : const StaticInstalledAppsSource([]),
 );
 
 /// Incoming deep links (vless://, happ://add/…), including the launch link.
 final deepLinksProvider = Provider<Stream<Uri>>((ref) => AppLinks().uriLinkStream);
 
-/// Simulated core until the platform controllers land (stages 4–5).
+/// Platform core: libbox on Android. Windows (stage 5) still uses the mock.
 final vpnCoreProvider = Provider<VpnCoreController>((ref) {
-  final core = MockVpnCoreController(now: ref.watch(nowProvider));
+  final now = ref.watch(nowProvider);
+  final VpnCoreController core = switch (ref.watch(appPlatformProvider)) {
+    AppPlatform.android => AndroidVpnController(now: now),
+    _ => MockVpnCoreController(now: now),
+  };
   ref.onDispose(core.dispose);
   return core;
 });
