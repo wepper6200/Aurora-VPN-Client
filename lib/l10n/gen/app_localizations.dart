@@ -1419,41 +1419,11 @@ abstract class AppLocalizations {
   /// **'No telemetry or analytics. Subscriptions and configs never leave this device.'**
   String get privacyNote;
 
-  /// No description provided for @settingsAbout.
-  ///
-  /// In en, this message translates to:
-  /// **'About'**
-  String get settingsAbout;
-
-  /// No description provided for @settingsVersion.
-  ///
-  /// In en, this message translates to:
-  /// **'Version'**
-  String get settingsVersion;
-
   /// No description provided for @settingsLicenses.
   ///
   /// In en, this message translates to:
   /// **'Licenses'**
   String get settingsLicenses;
-
-  /// No description provided for @settingsLicensesSub.
-  ///
-  /// In en, this message translates to:
-  /// **'Open-source components, including sing-box (GPLv3)'**
-  String get settingsLicensesSub;
-
-  /// No description provided for @settingsDesignSystem.
-  ///
-  /// In en, this message translates to:
-  /// **'Design system'**
-  String get settingsDesignSystem;
-
-  /// No description provided for @settingsDesignSystemSubtitle.
-  ///
-  /// In en, this message translates to:
-  /// **'Components, colors and typography'**
-  String get settingsDesignSystemSubtitle;
 
   /// No description provided for @themeSystem.
   ///
@@ -1544,108 +1514,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Rule-based routing, per-app split tunneling and a kill switch are there when you want them.'**
   String get onb3Body;
-
-  /// No description provided for @dsTitle.
-  ///
-  /// In en, this message translates to:
-  /// **'Design system'**
-  String get dsTitle;
-
-  /// No description provided for @dsColors.
-  ///
-  /// In en, this message translates to:
-  /// **'Colors'**
-  String get dsColors;
-
-  /// No description provided for @dsTypography.
-  ///
-  /// In en, this message translates to:
-  /// **'Typography'**
-  String get dsTypography;
-
-  /// No description provided for @dsButtons.
-  ///
-  /// In en, this message translates to:
-  /// **'Buttons'**
-  String get dsButtons;
-
-  /// No description provided for @dsCards.
-  ///
-  /// In en, this message translates to:
-  /// **'Cards'**
-  String get dsCards;
-
-  /// No description provided for @dsStatus.
-  ///
-  /// In en, this message translates to:
-  /// **'Status'**
-  String get dsStatus;
-
-  /// No description provided for @dsFeedback.
-  ///
-  /// In en, this message translates to:
-  /// **'Loading & empty states'**
-  String get dsFeedback;
-
-  /// No description provided for @dsPrimaryAction.
-  ///
-  /// In en, this message translates to:
-  /// **'Connect'**
-  String get dsPrimaryAction;
-
-  /// No description provided for @dsSecondaryAction.
-  ///
-  /// In en, this message translates to:
-  /// **'Import'**
-  String get dsSecondaryAction;
-
-  /// No description provided for @dsAccentAction.
-  ///
-  /// In en, this message translates to:
-  /// **'Test latency'**
-  String get dsAccentAction;
-
-  /// No description provided for @dsDangerAction.
-  ///
-  /// In en, this message translates to:
-  /// **'Delete'**
-  String get dsDangerAction;
-
-  /// No description provided for @dsCardSolid.
-  ///
-  /// In en, this message translates to:
-  /// **'Solid card'**
-  String get dsCardSolid;
-
-  /// No description provided for @dsCardElevated.
-  ///
-  /// In en, this message translates to:
-  /// **'Elevated card'**
-  String get dsCardElevated;
-
-  /// No description provided for @dsCardGlass.
-  ///
-  /// In en, this message translates to:
-  /// **'Glass card'**
-  String get dsCardGlass;
-
-  /// No description provided for @dsCardSelected.
-  ///
-  /// In en, this message translates to:
-  /// **'Selected card'**
-  String get dsCardSelected;
-
-  /// No description provided for @dsCardBody.
-  ///
-  /// In en, this message translates to:
-  /// **'Rounded corners, soft shadow and a hairline border.'**
-  String get dsCardBody;
-
-  /// No description provided for @dsTypographySample.
-  ///
-  /// In en, this message translates to:
-  /// **'The quick brown fox'**
-  String get dsTypographySample;
 
   /// No description provided for @settingsDesign.
   ///

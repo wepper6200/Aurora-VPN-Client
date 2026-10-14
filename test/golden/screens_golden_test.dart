@@ -242,15 +242,4 @@ void main() {
     size: const Size(460, 2300),
     setup: (t) => tab(t, 'Настройки'),
   );
-
-  golden(
-    'design_system',
-    size: const Size(412, 2000),
-    settle: false,
-    setup: (t) async {
-      await tab(t, 'Настройки');
-      await t.tap(find.text('Дизайн-система'));
-      await pumpFor(t, const Duration(seconds: 2));
-    },
-  );
 }

@@ -18,9 +18,22 @@ import dev.aurora.aurora_vpn.R
  */
 class VpnTileService : TileService() {
 
+    /**
+     * Live updates while the shade is open. requestListeningState() is a
+     * no-op for non-active tiles, so without this the tile kept whatever it
+     * showed when the shade opened (e.g. "off" right after tapping it).
+     */
+    private val statusListener: (VpnEvent) -> Unit = { if (it is VpnEvent.Status) render() }
+
     override fun onStartListening() {
         super.onStartListening()
+        VpnHub.addListener(statusListener)
         render()
+    }
+
+    override fun onStopListening() {
+        VpnHub.removeListener(statusListener)
+        super.onStopListening()
     }
 
     override fun onClick() {

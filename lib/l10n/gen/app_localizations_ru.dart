@@ -782,22 +782,7 @@ class AppLocalizationsRu extends AppLocalizations {
       'Без телеметрии и аналитики. Подписки и конфиги не покидают это устройство.';
 
   @override
-  String get settingsAbout => 'О приложении';
-
-  @override
-  String get settingsVersion => 'Версия';
-
-  @override
   String get settingsLicenses => 'Лицензии';
-
-  @override
-  String get settingsLicensesSub => 'Открытые компоненты, включая sing-box (GPLv3)';
-
-  @override
-  String get settingsDesignSystem => 'Дизайн-система';
-
-  @override
-  String get settingsDesignSystemSubtitle => 'Компоненты, цвета и типографика';
 
   @override
   String get themeSystem => 'Системная';
@@ -846,57 +831,6 @@ class AppLocalizationsRu extends AppLocalizations {
   @override
   String get onb3Body =>
       'Маршрутизация по правилам, раздельное туннелирование по приложениям и kill switch — когда понадобятся.';
-
-  @override
-  String get dsTitle => 'Дизайн-система';
-
-  @override
-  String get dsColors => 'Цвета';
-
-  @override
-  String get dsTypography => 'Типографика';
-
-  @override
-  String get dsButtons => 'Кнопки';
-
-  @override
-  String get dsCards => 'Карточки';
-
-  @override
-  String get dsStatus => 'Статусы';
-
-  @override
-  String get dsFeedback => 'Загрузка и пустые состояния';
-
-  @override
-  String get dsPrimaryAction => 'Подключить';
-
-  @override
-  String get dsSecondaryAction => 'Импорт';
-
-  @override
-  String get dsAccentAction => 'Тест задержки';
-
-  @override
-  String get dsDangerAction => 'Удалить';
-
-  @override
-  String get dsCardSolid => 'Обычная карточка';
-
-  @override
-  String get dsCardElevated => 'Приподнятая карточка';
-
-  @override
-  String get dsCardGlass => 'Стеклянная карточка';
-
-  @override
-  String get dsCardSelected => 'Выбранная карточка';
-
-  @override
-  String get dsCardBody => 'Скруглённые углы, мягкая тень и тонкая обводка.';
-
-  @override
-  String get dsTypographySample => 'Съешь же ещё этих мягких булок';
 
   @override
   String get settingsDesign => 'Оформление';

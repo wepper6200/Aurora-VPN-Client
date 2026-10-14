@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 
@@ -10,7 +9,6 @@ import '../../../core/platform.dart';
 import '../../../data/vpn/android_vpn_controller.dart';
 import '../../../domain/logs/log_entry.dart';
 import '../../../domain/settings/app_settings.dart';
-import '../../router/app_router.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/tokens.dart';
 import '../../widgets/app_card.dart';
@@ -272,33 +270,22 @@ class SettingsPage extends ConsumerWidget {
                 ),
               ),
 
-              SectionHeader(l10n.settingsAbout),
-              SettingsGroup(
-                children: [
-                  SettingsTile(
-                    icon: LucideIcons.info,
-                    title: l10n.settingsVersion,
-                    subtitle: version == null ? '…' : '${version.version} (${version.buildNumber})',
+              // Open-source notices must stay reachable (sing-box is GPLv3),
+              // so they live in a quiet footer instead of a whole section.
+              const SizedBox(height: AppSpacing.xxl),
+              Center(
+                child: TextButton(
+                  style: TextButton.styleFrom(foregroundColor: c.textTertiary),
+                  onPressed: () => showLicensePage(
+                    context: context,
+                    applicationName: l10n.appTitle,
+                    applicationVersion: version?.version,
                   ),
-                  SettingsTile(
-                    icon: LucideIcons.scale,
-                    iconColor: c.info,
-                    title: l10n.settingsLicenses,
-                    subtitle: l10n.settingsLicensesSub,
-                    onTap: () => showLicensePage(
-                      context: context,
-                      applicationName: l10n.appTitle,
-                      applicationVersion: version?.version,
-                    ),
+                  child: Text(
+                    '${l10n.appTitle} ${version?.version ?? ''} · ${l10n.settingsLicenses}',
+                    style: Theme.of(context).textTheme.bodySmall!.copyWith(color: c.textTertiary),
                   ),
-                  SettingsTile(
-                    icon: LucideIcons.swatchBook,
-                    title: l10n.settingsDesignSystem,
-                    subtitle: l10n.settingsDesignSystemSubtitle,
-                    iconColor: c.accentEnd,
-                    onTap: () => context.go(AppRoutes.designSystem),
-                  ),
-                ],
+                ),
               ),
             ],
           ),

@@ -773,22 +773,7 @@ class AppLocalizationsEn extends AppLocalizations {
       'No telemetry or analytics. Subscriptions and configs never leave this device.';
 
   @override
-  String get settingsAbout => 'About';
-
-  @override
-  String get settingsVersion => 'Version';
-
-  @override
   String get settingsLicenses => 'Licenses';
-
-  @override
-  String get settingsLicensesSub => 'Open-source components, including sing-box (GPLv3)';
-
-  @override
-  String get settingsDesignSystem => 'Design system';
-
-  @override
-  String get settingsDesignSystemSubtitle => 'Components, colors and typography';
 
   @override
   String get themeSystem => 'System';
@@ -837,57 +822,6 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get onb3Body =>
       'Rule-based routing, per-app split tunneling and a kill switch are there when you want them.';
-
-  @override
-  String get dsTitle => 'Design system';
-
-  @override
-  String get dsColors => 'Colors';
-
-  @override
-  String get dsTypography => 'Typography';
-
-  @override
-  String get dsButtons => 'Buttons';
-
-  @override
-  String get dsCards => 'Cards';
-
-  @override
-  String get dsStatus => 'Status';
-
-  @override
-  String get dsFeedback => 'Loading & empty states';
-
-  @override
-  String get dsPrimaryAction => 'Connect';
-
-  @override
-  String get dsSecondaryAction => 'Import';
-
-  @override
-  String get dsAccentAction => 'Test latency';
-
-  @override
-  String get dsDangerAction => 'Delete';
-
-  @override
-  String get dsCardSolid => 'Solid card';
-
-  @override
-  String get dsCardElevated => 'Elevated card';
-
-  @override
-  String get dsCardGlass => 'Glass card';
-
-  @override
-  String get dsCardSelected => 'Selected card';
-
-  @override
-  String get dsCardBody => 'Rounded corners, soft shadow and a hairline border.';
-
-  @override
-  String get dsTypographySample => 'The quick brown fox';
 
   @override
   String get settingsDesign => 'Style';

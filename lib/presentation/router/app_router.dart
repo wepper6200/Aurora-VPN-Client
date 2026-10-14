@@ -12,7 +12,6 @@ import '../features/servers/scan_qr_page.dart';
 import '../features/servers/server_editor_page.dart';
 import '../features/servers/servers_page.dart';
 import '../features/servers/subscription_editor_page.dart';
-import '../features/settings/design_system_page.dart';
 import '../features/settings/settings_page.dart';
 import '../shell/app_shell.dart';
 import '../shell/branch_container.dart';
@@ -29,7 +28,6 @@ abstract final class AppRoutes {
   static const splitApps = '/routing/apps';
   static const logs = '/logs';
   static const settings = '/settings';
-  static const designSystem = '/settings/design-system';
 }
 
 /// Root navigator; its context hosts app-wide toasts (e.g. deep-link imports).
@@ -105,15 +103,7 @@ final routerProvider = Provider<GoRouter>((ref) {
             routes: [GoRoute(path: AppRoutes.logs, builder: (_, _) => const LogsPage())],
           ),
           StatefulShellBranch(
-            routes: [
-              GoRoute(
-                path: AppRoutes.settings,
-                builder: (_, _) => const SettingsPage(),
-                routes: [
-                  GoRoute(path: 'design-system', builder: (_, _) => const DesignSystemPage()),
-                ],
-              ),
-            ],
+            routes: [GoRoute(path: AppRoutes.settings, builder: (_, _) => const SettingsPage())],
           ),
         ],
       ),
