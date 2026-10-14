@@ -65,6 +65,8 @@ abstract final class LinkSerializer {
     'fp': t.fingerprint,
     'pbk': t.realityPublicKey,
     'sid': t.realityShortId,
+    'spx': t.realitySpiderX,
+    'pqv': t.realityMldsa65Verify,
     'allowInsecure': t.insecure ? '1' : '',
   };
 

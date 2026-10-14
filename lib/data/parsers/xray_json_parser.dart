@@ -292,6 +292,8 @@ abstract final class XrayJsonParser {
           fingerprint: str(r['fingerprint']),
           realityPublicKey: str(r['password'] ?? r['publicKey']),
           realityShortId: str(r['shortId']),
+          realitySpiderX: str(r['spiderX']),
+          realityMldsa65Verify: str(r['mldsa65Verify']),
         );
     }
     return const TlsConfig();

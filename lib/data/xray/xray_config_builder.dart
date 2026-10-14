@@ -138,6 +138,8 @@ abstract final class XrayConfigBuilder {
           'fingerprint': tls.fingerprint.isNotEmpty ? tls.fingerprint : 'chrome',
           'publicKey': tls.realityPublicKey,
           if (tls.realityShortId.isNotEmpty) 'shortId': tls.realityShortId,
+          if (tls.realitySpiderX.isNotEmpty) 'spiderX': tls.realitySpiderX,
+          if (tls.realityMldsa65Verify.isNotEmpty) 'mldsa65Verify': tls.realityMldsa65Verify,
         },
       if (t.httpObfs)
         'rawSettings': {

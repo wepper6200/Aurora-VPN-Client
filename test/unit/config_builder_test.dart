@@ -169,16 +169,16 @@ void main() {
     });
 
     test('reality forces uTLS and carries key + short id', () {
-      final p = proxyOf(
-        build(
-          vlessBase.copyWith(
-            flow: 'xtls-rprx-vision',
-            tls: const TlsConfig(
-              mode: TlsMode.reality,
-              sni: 'www.example.org',
-              realityPublicKey: 'pk',
-              realityShortId: 'ab',
-            ),
+      // Reality runs through Xray in the app; the sing-box outbound shape is
+      // still what imported sing-box configs and tools would get.
+      final p = SingBoxConfigBuilder.outbound(
+        vlessBase.copyWith(
+          flow: 'xtls-rprx-vision',
+          tls: const TlsConfig(
+            mode: TlsMode.reality,
+            sni: 'www.example.org',
+            realityPublicKey: 'pk',
+            realityShortId: 'ab',
           ),
         ),
       );

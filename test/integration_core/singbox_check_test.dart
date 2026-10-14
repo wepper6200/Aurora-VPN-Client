@@ -145,6 +145,19 @@ void main() {
     expect(r.exitCode, 0, reason: '$name\n${r.stdout}\n${r.stderr}\n$json');
   }
 
+  // Servers that run on Xray (Reality, XHTTP…) reach it through the SOCKS bridge.
+  CoreOptions withBridge(CoreOptions o) => CoreOptions(
+    capture: o.capture,
+    ruleSetDir: o.ruleSetDir,
+    android: o.android,
+    mixedPort: o.mixedPort,
+    clashApiPort: o.clashApiPort,
+    clashApiSecret: o.clashApiSecret,
+    cachePath: o.cachePath,
+    selfPackage: o.android ? 'dev.aurora.aurora_vpn' : null,
+    xray: const XrayBridge(port: 23456, username: 'u', password: 'p'),
+  );
+
   for (final o in outbounds.entries) {
     test('outbound ${o.key}', () async {
       final (routing, settings, options) = scenarios['android-rules-all']!;
@@ -154,11 +167,25 @@ void main() {
           server: ServerProfile(id: o.key, name: o.key, outbound: o.value),
           routing: routing,
           settings: settings,
-          options: options,
+          options: o.value.requiresXray ? withBridge(options) : options,
         ),
       );
     }, skip: skip);
   }
+
+  // The sing-box side of an Xray server: bridge outbound + self-exclusion.
+  test('outbound vless-reality via the Xray bridge (windows)', () async {
+    final (routing, settings, options) = scenarios['windows-tun-killswitch-direct']!;
+    await check(
+      'reality-bridge-windows',
+      SingBoxConfigBuilder.buildJson(
+        server: ServerProfile(id: 'r', name: 'r', outbound: outbounds['vless-reality']!),
+        routing: routing,
+        settings: settings,
+        options: withBridge(options),
+      ),
+    );
+  }, skip: skip);
 
   for (final s in scenarios.entries) {
     test('scenario ${s.key}', () async {
@@ -166,7 +193,8 @@ void main() {
       await check(
         s.key,
         SingBoxConfigBuilder.buildJson(
-          server: ServerProfile(id: 's', name: 's', outbound: outbounds['vless-reality']!),
+          // A server sing-box runs itself, so the whole config is exercised.
+          server: ServerProfile(id: 's', name: 's', outbound: outbounds['vless-ws-tls']!),
           routing: routing,
           settings: settings,
           options: options,

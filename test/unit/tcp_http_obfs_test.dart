@@ -104,6 +104,25 @@ void main() {
       expect(again.outbound.transport.httpObfs, isTrue);
     });
 
+    test('Reality keeps spx / pqv and runs on Xray', () {
+      final s = server(
+        'vless://$uuid@r.example.com:443?type=tcp&security=reality&sni=www.example.org'
+        '&pbk=pk&sid=ab&spx=%2Fsearch&pqv=mldsa&flow=xtls-rprx-vision',
+      );
+      expect(s.outbound.requiresXray, isTrue);
+      final stream = XrayConfigBuilder.outbound(s.outbound)['streamSettings']! as Map;
+      expect(stream['realitySettings'], {
+        'serverName': 'www.example.org',
+        'fingerprint': 'chrome',
+        'publicKey': 'pk',
+        'shortId': 'ab',
+        'spiderX': '/search',
+        'mldsa65Verify': 'mldsa',
+      });
+      final again = server(LinkSerializer.toLink(s.name, s.outbound));
+      expect(again.outbound.tls.realityMldsa65Verify, 'mldsa');
+    });
+
     test('sing-box config sends obfuscated TCP through the Xray bridge', () {
       final s = server('vless://$uuid@t.example.com:80?type=tcp&headerType=http');
       expect(

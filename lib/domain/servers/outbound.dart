@@ -105,6 +105,8 @@ class TlsConfig {
     this.insecure = false,
     this.realityPublicKey = '',
     this.realityShortId = '',
+    this.realitySpiderX = '',
+    this.realityMldsa65Verify = '',
   });
 
   final TlsMode mode;
@@ -117,6 +119,13 @@ class TlsConfig {
   final String realityPublicKey;
   final String realityShortId;
 
+  /// Reality `spx`: the path the client "browses" to look like a real visit.
+  final String realitySpiderX;
+
+  /// Reality `pqv`: ML-DSA-65 public key for post-quantum server
+  /// verification (newer Xray servers). Only Xray-core supports it.
+  final String realityMldsa65Verify;
+
   bool get enabled => mode != TlsMode.none;
 
   Map<String, Object?> toJson() => {
@@ -127,6 +136,8 @@ class TlsConfig {
     if (insecure) 'insecure': true,
     if (realityPublicKey.isNotEmpty) 'pbk': realityPublicKey,
     if (realityShortId.isNotEmpty) 'sid': realityShortId,
+    if (realitySpiderX.isNotEmpty) 'spx': realitySpiderX,
+    if (realityMldsa65Verify.isNotEmpty) 'pqv': realityMldsa65Verify,
   };
 
   factory TlsConfig.fromJson(Map<String, Object?> j) => TlsConfig(
@@ -137,6 +148,8 @@ class TlsConfig {
     insecure: j['insecure'] as bool? ?? false,
     realityPublicKey: j['pbk'] as String? ?? '',
     realityShortId: j['sid'] as String? ?? '',
+    realitySpiderX: j['spx'] as String? ?? '',
+    realityMldsa65Verify: j['pqv'] as String? ?? '',
   );
 
   @override
@@ -148,7 +161,9 @@ class TlsConfig {
       other.fingerprint == fingerprint &&
       other.insecure == insecure &&
       other.realityPublicKey == realityPublicKey &&
-      other.realityShortId == realityShortId;
+      other.realityShortId == realityShortId &&
+      other.realitySpiderX == realitySpiderX &&
+      other.realityMldsa65Verify == realityMldsa65Verify;
 
   @override
   int get hashCode => Object.hash(
@@ -159,6 +174,8 @@ class TlsConfig {
     insecure,
     realityPublicKey,
     realityShortId,
+    realitySpiderX,
+    realityMldsa65Verify,
   );
 }
 
@@ -239,8 +256,15 @@ class OutboundConfig {
   final String xrayOutbound;
 
   /// Runs through Xray-core (behind sing-box) instead of sing-box itself.
+  ///
+  /// Reality goes to Xray too: Reality servers are Xray servers, and newer
+  /// ones use features sing-box's client lacks (post-quantum `pqv`, ML-KEM
+  /// key shares), which sing-box reports as "reality verification failed".
   bool get requiresXray =>
-      xrayOutbound.isNotEmpty || transport.type == TransportType.xhttp || transport.httpObfs;
+      xrayOutbound.isNotEmpty ||
+      transport.type == TransportType.xhttp ||
+      transport.httpObfs ||
+      tls.mode == TlsMode.reality;
 
   /// Short transport label for the UI.
   String get transportLabel => switch (protocol) {

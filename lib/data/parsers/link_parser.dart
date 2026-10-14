@@ -357,6 +357,8 @@ abstract final class LinkParser {
       insecure: _bool(q['allowInsecure'] ?? q['insecure'] ?? q['allow_insecure']),
       realityPublicKey: pbk,
       realityShortId: q['sid'] ?? q['shortId'] ?? '',
+      realitySpiderX: q['spx'] ?? q['spiderX'] ?? '',
+      realityMldsa65Verify: q['pqv'] ?? q['mldsa65Verify'] ?? '',
     );
   }
 

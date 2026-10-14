@@ -150,7 +150,7 @@ class CurrentServerCard extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  server.name,
+                  displayServerName(server.name),
                   style: theme.textTheme.titleMedium,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,

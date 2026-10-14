@@ -1,3 +1,4 @@
+import 'package:country_flags/country_flags.dart';
 import 'package:flutter/material.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
@@ -9,7 +10,24 @@ import '../../../theme/tokens.dart';
 import '../../../widgets/app_card.dart';
 import '../../../widgets/expressive_loader.dart';
 
-/// Round avatar: the flag emoji if the name starts with one, else an initial.
+final _leadingFlag = RegExp(r'^\s*([\u{1F1E6}-\u{1F1FF}]{2})\s*', unicode: true);
+
+/// ISO country code of a leading flag emoji ("🇪🇪 EST1" → "EE"), if any.
+String? flagCountryCode(String name) {
+  final flag = _leadingFlag.firstMatch(name)?.group(1);
+  if (flag == null) return null;
+  return String.fromCharCodes(flag.runes.map((r) => r - 0x1F1E6 + 0x41));
+}
+
+/// The name without its leading flag: the avatar already shows it, and
+/// Windows has no flag emoji (it would print the letters "EE").
+String displayServerName(String name) {
+  final rest = name.replaceFirst(_leadingFlag, '').trim();
+  return rest.isEmpty ? name.trim() : rest;
+}
+
+/// Round avatar: the country flag (drawn as an image, so it also works on
+/// Windows) if the name starts with a flag emoji, else an initial.
 class ServerAvatar extends StatelessWidget {
   const ServerAvatar({super.key, required this.name, this.size = 42, this.active = false});
 
@@ -17,14 +35,14 @@ class ServerAvatar extends StatelessWidget {
   final double size;
   final bool active;
 
-  static final _flag = RegExp(r'^\s*([\u{1F1E6}-\u{1F1FF}]{2})', unicode: true);
-
   @override
   Widget build(BuildContext context) {
     final c = context.colors;
     final s = Theme.of(context).colorScheme;
-    final flag = _flag.firstMatch(name)?.group(1);
-    final letter = name.trim().isEmpty ? '?' : name.trim().characters.first.toUpperCase();
+    final code = flagCountryCode(name);
+    final flag = code != null && FlagCode.fromCountryCode(code) != null ? code : null;
+    final shown = displayServerName(name);
+    final letter = shown.isEmpty ? '?' : shown.characters.first.toUpperCase();
     final Color fg;
     final BoxDecoration deco;
     if (c.isMaterial) {
@@ -48,14 +66,24 @@ class ServerAvatar extends StatelessWidget {
               ),
       );
     }
+    // A flag fills the circle; the colored ring around it marks the active server.
+    final ring = active ? 2.5 : 1.0;
     return AnimatedContainer(
       duration: AppDurations.medium,
       width: size,
       height: size,
       alignment: Alignment.center,
+      padding: flag != null ? EdgeInsets.all(ring) : null,
       decoration: deco,
       child: flag != null
-          ? Text(flag, style: TextStyle(fontSize: size * 0.48))
+          ? CountryFlag.fromCountryCode(
+              flag,
+              theme: ImageTheme(
+                shape: const Circle(),
+                width: size - ring * 2,
+                height: size - ring * 2,
+              ),
+            )
           : Text(
               letter,
               style: Theme.of(context).textTheme.titleMedium!
@@ -228,7 +256,7 @@ class ServerTile extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  server.name,
+                  displayServerName(server.name),
                   style: theme.textTheme.titleSmall,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,

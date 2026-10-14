@@ -148,7 +148,7 @@ class _ServersPageState extends ConsumerState<ServersPage> {
       case ServerMenuAction.delete:
         final ok = await confirmDelete(
           context,
-          title: l10n.deleteConfirmTitle(s.name),
+          title: l10n.deleteConfirmTitle(displayServerName(s.name)),
           body: l10n.deleteConfirmBody,
         );
         if (ok) await ref.read(serverActionsProvider).delete(s.id);

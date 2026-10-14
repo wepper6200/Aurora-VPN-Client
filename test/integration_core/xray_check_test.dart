@@ -46,6 +46,27 @@ void main() {
         realityShortId: 'ab',
       ),
     ),
+    'tcp-reality-vision': const OutboundConfig(
+      protocol: ProxyProtocol.vless,
+      host: 'r.example.com',
+      port: 443,
+      uuid: uuid,
+      flow: 'xtls-rprx-vision',
+      tls: TlsConfig(
+        mode: TlsMode.reality,
+        sni: 'www.example.org',
+        realityPublicKey: pbk,
+        realityShortId: 'ab',
+        realitySpiderX: '/search',
+      ),
+    ),
+    'tcp-http-obfs': const OutboundConfig(
+      protocol: ProxyProtocol.vmess,
+      host: 'm.example.com',
+      port: 8080,
+      uuid: uuid,
+      transport: TransportConfig(headerType: 'http', path: '/a', host: 'cdn.example.com'),
+    ),
     'xhttp-tls-extra': const OutboundConfig(
       protocol: ProxyProtocol.vless,
       host: 'x.example.com',

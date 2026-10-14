@@ -154,6 +154,11 @@ class _ServerEditorPageState extends ConsumerState<ServerEditorPage> {
               insecure: tlsMode == TlsMode.tls && _insecure,
               realityPublicKey: tlsMode == TlsMode.reality ? _v('publicKey') : '',
               realityShortId: tlsMode == TlsMode.reality ? _v('shortId') : '',
+              // Not editable here; keep what the import carried.
+              realitySpiderX: tlsMode == TlsMode.reality ? prev?.tls.realitySpiderX ?? '' : '',
+              realityMldsa65Verify: tlsMode == TlsMode.reality
+                  ? prev?.tls.realityMldsa65Verify ?? ''
+                  : '',
             ),
       obfsPassword: _protocol == ProxyProtocol.hysteria2 ? _v('obfsPassword') : '',
       upMbps: prev?.upMbps ?? 0,

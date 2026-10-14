@@ -56,7 +56,7 @@ Map<String, Object?> vless({
 
 void main() {
   group('Xray JSON subscriptions', () {
-    test('array of configs: reality → sing-box, xhttp → Xray with outbound kept', () {
+    test('array of configs: reality → model, xhttp → Xray with outbound kept', () {
       final body = jsonEncode([
         xrayConfig(
           '🇩🇪 Reality',
@@ -95,7 +95,10 @@ void main() {
       expect(r.servers.map((s) => s.name), ['🇩🇪 Reality', '🇳🇱 XHTTP']);
 
       final reality = r.servers[0].outbound;
-      expect(reality.requiresXray, isFalse);
+      // Mapped onto the model (no raw outbound kept), and run on Xray like
+      // every Reality server.
+      expect(reality.xrayOutbound, isEmpty);
+      expect(reality.requiresXray, isTrue);
       expect(reality.tls.mode, TlsMode.reality);
       expect(reality.tls.realityPublicKey, 'cHViS2V5');
       expect(reality.flow, 'xtls-rprx-vision');
