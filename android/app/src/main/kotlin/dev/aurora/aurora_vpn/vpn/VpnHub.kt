@@ -35,6 +35,13 @@ object VpnHub {
     @Volatile var startedAt: Long? = null
         private set
 
+    /** Application context, for refreshing the tile and widgets. */
+    @Volatile private var appContext: Context? = null
+
+    fun init(context: Context) {
+        appContext = context.applicationContext
+    }
+
     fun addListener(l: (VpnEvent) -> Unit) {
         listeners += l
     }
@@ -48,6 +55,7 @@ object VpnHub {
         lastError = error
         startedAt = if (status == VpnStatus.STARTED) System.currentTimeMillis() else null
         emit(VpnEvent.Status(status, error, startedAt))
+        appContext?.let { VpnSurfaces.refresh(it) }
     }
 
     fun emit(event: VpnEvent) {
@@ -61,11 +69,12 @@ object VpnHub {
     private fun labelFile(context: Context) = File(context.filesDir, "active-label.txt")
     private fun xrayFile(context: Context) = File(context.filesDir, "active-xray.json")
 
-    /** Stores the config so Always-on VPN can restart without the UI. */
+    /** Stores the config so Always-on VPN, the tile and widgets can start without the UI. */
     fun saveRequest(context: Context, config: String, label: String, xray: String?) {
         configFile(context).writeText(config)
         labelFile(context).writeText(label)
         if (xray.isNullOrBlank()) xrayFile(context).delete() else xrayFile(context).writeText(xray)
+        VpnSurfaces.refresh(context)
     }
 
     /** Xray-core config for servers that need it; null for sing-box-only servers. */

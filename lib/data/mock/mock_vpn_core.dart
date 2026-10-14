@@ -102,6 +102,12 @@ class MockVpnCoreController implements VpnCoreController {
     });
   }
 
+  /// Requests stored via [remember], newest last.
+  final remembered = <CoreStartRequest>[];
+
+  @override
+  Future<void> remember(CoreStartRequest request) async => remembered.add(request);
+
   @override
   Future<void> stop() async {
     _cancel();

@@ -6,4 +6,10 @@
     <string name="notification_connected">Connected</string>
     <string name="notification_disconnect">Disconnect</string>
     <string name="error_no_config">No server selected</string>
+    <string name="status_disconnected">Disconnected</string>
+    <string name="status_disconnecting">Disconnecting…</string>
+    <string name="tile_label" translatable="false">Aurora VPN</string>
+    <string name="widget_description">VPN status and a connect button</string>
+    <string name="widget_toggle">Connect or disconnect</string>
+    <string name="widget_hint_setup">Open the app to pick a server</string>
 </resources>

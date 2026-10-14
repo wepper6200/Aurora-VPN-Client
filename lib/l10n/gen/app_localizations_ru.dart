@@ -897,4 +897,31 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get dsTypographySample => 'Съешь же ещё этих мягких булок';
+
+  @override
+  String get settingsDesign => 'Оформление';
+
+  @override
+  String get designMaterial => 'Material 3';
+
+  @override
+  String get designMaterialSub => 'Тональные цвета, живые формы и «змейка» при подключении';
+
+  @override
+  String get designGlass => 'Liquid Glass';
+
+  @override
+  String get designGlassSub => 'Прозрачное стекло, блики и плавающая панель';
+
+  @override
+  String get onbStyleTitle => 'Выберите оформление';
+
+  @override
+  String get onbStyleBody => 'Его можно поменять в любой момент в настройках.';
+
+  @override
+  String get pingTest => 'Тест пинга';
+
+  @override
+  String get pingCheck => 'Проверить пинг';
 }

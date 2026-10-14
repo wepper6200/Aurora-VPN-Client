@@ -76,8 +76,8 @@ class _AuroraAppState extends ConsumerState<AuroraApp> {
       onGenerateTitle: (context) => context.l10n.appTitle,
       debugShowCheckedModeBanner: false,
       routerConfig: router,
-      theme: AppTheme.light,
-      darkTheme: AppTheme.dark,
+      theme: AppTheme.of(settings.designStyle, Brightness.light),
+      darkTheme: AppTheme.of(settings.designStyle, Brightness.dark),
       themeMode: switch (settings.theme) {
         ThemePreference.system => ThemeMode.system,
         ThemePreference.light => ThemeMode.light,

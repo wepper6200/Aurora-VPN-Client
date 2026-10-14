@@ -34,49 +34,64 @@ class LogsPage extends ConsumerWidget {
     final visible = logs.visible;
     final bottomInset = MediaQuery.paddingOf(context).bottom;
 
+    final actions = [
+      _LogAction(
+        logs.paused ? LucideIcons.play : LucideIcons.pause,
+        logs.paused ? l10n.logsResume : l10n.logsPause,
+        ctrl.togglePause,
+        active: logs.paused,
+      ),
+      _LogAction(
+        LucideIcons.copy,
+        l10n.logsCopy,
+        visible.isEmpty
+            ? null
+            : () async {
+                await Clipboard.setData(
+                  ClipboardData(text: visible.map(formatLogLine).join('\n')),
+                );
+                if (context.mounted) showToast(context, l10n.copied);
+              },
+      ),
+      _LogAction(
+        LucideIcons.fileDown,
+        l10n.logsExport,
+        logs.entries.isEmpty
+            ? null
+            : () async {
+                try {
+                  final path = await ctrl.export();
+                  if (path != null && context.mounted) {
+                    showToast(context, l10n.logsExported(path));
+                  }
+                } catch (_) {
+                  if (context.mounted) showToast(context, l10n.logsExportFailed, error: true);
+                }
+              },
+      ),
+      _LogAction(
+        LucideIcons.trash2,
+        l10n.logsClear,
+        logs.entries.isEmpty ? null : ctrl.clear,
+      ),
+    ];
+    // Material 3 puts them on a floating toolbar; glass keeps header bubbles.
+    final toolbar = c.isMaterial;
+
     return PageScaffold(
       title: l10n.logsTitle,
       bottomSpacing: false,
+      floatingActionButton: toolbar ? _FloatingToolbar(actions: actions) : null,
+      floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
       actions: [
-        AppIconButton(
-          icon: logs.paused ? LucideIcons.play : LucideIcons.pause,
-          tooltip: logs.paused ? l10n.logsResume : l10n.logsPause,
-          color: logs.paused ? c.warning : null,
-          onPressed: ctrl.togglePause,
-        ),
-        AppIconButton(
-          icon: LucideIcons.copy,
-          tooltip: l10n.logsCopy,
-          onPressed: visible.isEmpty
-              ? null
-              : () async {
-                  await Clipboard.setData(
-                    ClipboardData(text: visible.map(formatLogLine).join('\n')),
-                  );
-                  if (context.mounted) showToast(context, l10n.copied);
-                },
-        ),
-        AppIconButton(
-          icon: LucideIcons.fileDown,
-          tooltip: l10n.logsExport,
-          onPressed: logs.entries.isEmpty
-              ? null
-              : () async {
-                  try {
-                    final path = await ctrl.export();
-                    if (path != null && context.mounted) {
-                      showToast(context, l10n.logsExported(path));
-                    }
-                  } catch (_) {
-                    if (context.mounted) showToast(context, l10n.logsExportFailed, error: true);
-                  }
-                },
-        ),
-        AppIconButton(
-          icon: LucideIcons.trash2,
-          tooltip: l10n.logsClear,
-          onPressed: logs.entries.isEmpty ? null : ctrl.clear,
-        ),
+        if (!toolbar)
+          for (final a in actions)
+            AppIconButton(
+              icon: a.icon,
+              tooltip: a.tooltip,
+              color: a.active ? c.warning : null,
+              onPressed: a.onPressed,
+            ),
       ],
       slivers: [
         SliverToBoxAdapter(
@@ -114,7 +129,8 @@ class LogsPage extends ConsumerWidget {
               AppSpacing.page,
               AppSpacing.sm,
               AppSpacing.page,
-              AppSpacing.lg + bottomInset,
+              // Keeps the newest lines clear of the floating toolbar.
+              AppSpacing.lg + bottomInset + (toolbar ? 72 : 0),
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -153,6 +169,64 @@ class LogsPage extends ConsumerWidget {
           ),
         ),
       ],
+    );
+  }
+}
+
+class _LogAction {
+  const _LogAction(this.icon, this.tooltip, this.onPressed, {this.active = false});
+
+  final IconData icon;
+  final String tooltip;
+  final VoidCallback? onPressed;
+
+  /// Toggled on (the stream is paused).
+  final bool active;
+}
+
+/// Material 3 Expressive floating toolbar; a toggled action sits in a
+/// tonal pill.
+class _FloatingToolbar extends StatelessWidget {
+  const _FloatingToolbar({required this.actions});
+
+  final List<_LogAction> actions;
+
+  @override
+  Widget build(BuildContext context) {
+    final s = Theme.of(context).colorScheme;
+    return Material(
+      color: s.surfaceContainerHigh,
+      shape: const StadiumBorder(),
+      elevation: 3,
+      shadowColor: Colors.black45,
+      child: Padding(
+        padding: const EdgeInsets.all(6),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            for (final a in actions)
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 2),
+                child: IconButton(
+                  tooltip: a.tooltip,
+                  onPressed: a.onPressed,
+                  isSelected: a.active,
+                  style: IconButton.styleFrom(
+                    minimumSize: const Size(52, 48),
+                    foregroundColor: s.onSurfaceVariant,
+                    backgroundColor: a.active ? s.secondaryContainer : null,
+                    shape: const StadiumBorder(),
+                  ),
+                  icon: Icon(
+                    a.icon,
+                    size: 22,
+                    color: a.active ? s.onSecondaryContainer : null,
+                  ),
+                ),
+              ),
+          ],
+        ),
+      ),
     );
   }
 }

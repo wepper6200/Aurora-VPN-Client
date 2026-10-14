@@ -1646,6 +1646,60 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'The quick brown fox'**
   String get dsTypographySample;
+
+  /// No description provided for @settingsDesign.
+  ///
+  /// In en, this message translates to:
+  /// **'Style'**
+  String get settingsDesign;
+
+  /// No description provided for @designMaterial.
+  ///
+  /// In en, this message translates to:
+  /// **'Material 3'**
+  String get designMaterial;
+
+  /// No description provided for @designMaterialSub.
+  ///
+  /// In en, this message translates to:
+  /// **'Tonal colors, morphing shapes and a wavy loader'**
+  String get designMaterialSub;
+
+  /// No description provided for @designGlass.
+  ///
+  /// In en, this message translates to:
+  /// **'Liquid Glass'**
+  String get designGlass;
+
+  /// No description provided for @designGlassSub.
+  ///
+  /// In en, this message translates to:
+  /// **'Translucent glass, highlights and a floating tab bar'**
+  String get designGlassSub;
+
+  /// No description provided for @onbStyleTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Pick a look'**
+  String get onbStyleTitle;
+
+  /// No description provided for @onbStyleBody.
+  ///
+  /// In en, this message translates to:
+  /// **'You can change it any time in Settings.'**
+  String get onbStyleBody;
+
+  /// No description provided for @pingTest.
+  ///
+  /// In en, this message translates to:
+  /// **'Ping test'**
+  String get pingTest;
+
+  /// No description provided for @pingCheck.
+  ///
+  /// In en, this message translates to:
+  /// **'Check ping'**
+  String get pingCheck;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

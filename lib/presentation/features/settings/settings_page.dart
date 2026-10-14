@@ -15,6 +15,7 @@ import '../../theme/app_colors.dart';
 import '../../theme/tokens.dart';
 import '../../widgets/app_card.dart';
 import '../../widgets/decorations.dart';
+import '../../widgets/design_style_picker.dart';
 import '../../widgets/dialogs.dart';
 import '../../widgets/form_section.dart';
 import '../../widgets/page_scaffold.dart';
@@ -65,10 +66,15 @@ class SettingsPage extends ConsumerWidget {
         PagePadding(
           child: SliverList.list(
             children: [
-              SectionHeader(l10n.settingsAppearance.toUpperCase()),
+              SectionHeader(l10n.settingsAppearance),
               AppCard(
                 child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
+                    Text(l10n.settingsDesign, style: Theme.of(context).textTheme.labelMedium),
+                    const SizedBox(height: AppSpacing.sm),
+                    DesignStylePicker(value: s.designStyle, onChanged: ctrl.setDesignStyle),
+                    const SizedBox(height: AppSpacing.xl),
                     FormSegmented<ThemePreference>(
                       label: l10n.settingsTheme,
                       value: s.theme,
@@ -94,7 +100,7 @@ class SettingsPage extends ConsumerWidget {
                 ),
               ),
 
-              SectionHeader(l10n.settingsConnection.toUpperCase()),
+              SectionHeader(l10n.settingsConnection),
               SettingsGroup(
                 children: [
                   switchTile(
@@ -173,7 +179,7 @@ class SettingsPage extends ConsumerWidget {
                 ),
               ],
 
-              SectionHeader(l10n.settingsNetwork.toUpperCase()),
+              SectionHeader(l10n.settingsNetwork),
               SettingsGroup(
                 children: [
                   SettingsTile(
@@ -210,7 +216,7 @@ class SettingsPage extends ConsumerWidget {
                 ],
               ),
 
-              SectionHeader(l10n.settingsSubscriptions.toUpperCase()),
+              SectionHeader(l10n.settingsSubscriptions),
               SettingsGroup(
                 children: [
                   switchTile(
@@ -231,7 +237,7 @@ class SettingsPage extends ConsumerWidget {
                 ],
               ),
 
-              SectionHeader(l10n.logsTitle.toUpperCase()),
+              SectionHeader(l10n.logsTitle),
               SettingsGroup(
                 children: [
                   SettingsTile(
@@ -252,7 +258,7 @@ class SettingsPage extends ConsumerWidget {
                 ],
               ),
 
-              SectionHeader(l10n.settingsPrivacy.toUpperCase()),
+              SectionHeader(l10n.settingsPrivacy),
               AppCard(
                 variant: AppCardVariant.elevated,
                 child: Row(
@@ -266,7 +272,7 @@ class SettingsPage extends ConsumerWidget {
                 ),
               ),
 
-              SectionHeader(l10n.settingsAbout.toUpperCase()),
+              SectionHeader(l10n.settingsAbout),
               SettingsGroup(
                 children: [
                   SettingsTile(

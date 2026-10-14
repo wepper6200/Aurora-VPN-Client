@@ -1,4 +1,7 @@
+import 'package:aurora_vpn/application/settings/settings_controller.dart';
 import 'package:aurora_vpn/core/platform.dart';
+import 'package:aurora_vpn/domain/settings/app_settings.dart';
+import 'package:aurora_vpn/presentation/theme/app_colors.dart';
 import 'package:aurora_vpn/presentation/shell/window_title_bar.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -48,6 +51,9 @@ void main() {
   testWidgets('first launch shows onboarding and finishes on the home tab', (tester) async {
     await pumpApp(tester, prefs: {...en, 'settings.onboardingDone': false});
 
+    expect(find.text('Pick a look'), findsOneWidget);
+    await tester.tap(find.text('Next'));
+    await tester.pumpAndSettle();
     expect(find.text('Your VPN, your rules'), findsOneWidget);
     await tester.tap(find.text('Next'));
     await tester.pumpAndSettle();
@@ -59,6 +65,21 @@ void main() {
 
     expect(find.byType(NavigationBar), findsOneWidget);
     expect(find.text('Tap to connect'), findsOneWidget);
+  });
+
+  testWidgets('the style picked during onboarding is applied and saved', (tester) async {
+    final container = await pumpApp(tester, prefs: {...en, 'settings.onboardingDone': false});
+
+    await tester.tap(find.text('Liquid Glass'));
+    await tester.pumpAndSettle();
+    expect(container.read(settingsProvider).designStyle, DesignStyle.glass);
+    expect(Theme.of(tester.element(find.text('Pick a look'))).extension<AppColors>()!.isGlass, true);
+
+    await tester.tap(find.text('Skip'));
+    await tester.pumpAndSettle();
+    // Liquid Glass replaces the Material navigation bar with a glass capsule.
+    expect(find.byType(NavigationBar), findsNothing);
+    expect(find.text('Servers'), findsOneWidget);
   });
 
   testWidgets('onboarding can be skipped', (tester) async {

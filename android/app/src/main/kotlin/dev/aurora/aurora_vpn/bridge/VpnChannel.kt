@@ -68,6 +68,21 @@ class VpnChannel(private val activity: Activity, messenger: BinaryMessenger) :
                 AuroraVpnService.start(activity)
                 result.success(null)
             }
+            "save" -> {
+                // Remembered for the tile / widget; doesn't touch a running tunnel.
+                val config = call.argument<String>("config")
+                if (config.isNullOrBlank()) {
+                    result.error("ARGS", "config is required", null)
+                    return
+                }
+                VpnHub.saveRequest(
+                    activity,
+                    config,
+                    call.argument<String>("label").orEmpty(),
+                    call.argument<String>("xray"),
+                )
+                result.success(null)
+            }
             "stop" -> {
                 AuroraVpnService.stop(activity)
                 result.success(null)

@@ -73,7 +73,11 @@ final subscriptionFetcherProvider = Provider<SubscriptionFetcher>((ref) {
   return f;
 });
 
-final latencyTesterProvider = Provider<LatencyTester>((ref) => const TcpLatencyTester());
+final latencyTesterProvider = Provider<LatencyTester>((ref) => const CompositeLatencyTester());
+
+/// Pings every server the first time the Servers tab opens in a session
+/// (tests turn it off to keep timers deterministic).
+final autoPingProvider = Provider<bool>((ref) => true);
 
 final installedAppsSourceProvider = Provider<InstalledAppsSource>(
   (ref) => ref.watch(appPlatformProvider).isMobile

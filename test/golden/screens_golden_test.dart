@@ -2,6 +2,7 @@
 library;
 
 import 'package:aurora_vpn/core/platform.dart';
+import 'package:aurora_vpn/presentation/features/home/widgets/connect_button.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -32,6 +33,7 @@ void main() {
     AppPlatform platform = AppPlatform.android,
     Size size = phone,
     String theme = 'dark',
+    String style = 'material',
     Map<String, Object> prefs = const {},
     bool settle = true,
     Future<void> Function(WidgetTester tester)? setup,
@@ -42,7 +44,12 @@ void main() {
         platform: platform,
         size: size,
         fixedClock: true,
-        prefs: {'settings.language': 'ru', 'settings.theme': theme, ...prefs},
+        prefs: {
+          'settings.language': 'ru',
+          'settings.theme': theme,
+          'settings.designStyle': style,
+          ...prefs,
+        },
       );
       await setup?.call(tester);
       if (settle) await tester.pumpAndSettle();
@@ -51,22 +58,73 @@ void main() {
   }
 
   // Onboarding
-  golden('onboarding_1', prefs: {'settings.onboardingDone': false});
+  golden('onboarding_style', prefs: {'settings.onboardingDone': false});
+  golden('glass_onboarding_style', style: 'glass', prefs: {'settings.onboardingDone': false});
+  golden(
+    'onboarding_1',
+    prefs: {'settings.onboardingDone': false},
+    setup: (t) async {
+      await t.tap(find.text('Далее'));
+      await t.pumpAndSettle();
+    },
+  );
   golden(
     'onboarding_3_light',
     theme: 'light',
     prefs: {'settings.onboardingDone': false},
     setup: (t) async {
-      await t.tap(find.text('Далее'));
-      await t.pumpAndSettle();
-      await t.tap(find.text('Далее'));
-      await t.pumpAndSettle();
+      for (var i = 0; i < 3; i++) {
+        await t.tap(find.text('Далее'));
+        await t.pumpAndSettle();
+      }
     },
   );
 
   // Home
   golden('home_disconnected');
   golden('home_disconnected_light', theme: 'light');
+  golden(
+    'home_connecting',
+    settle: false,
+    setup: (t) async {
+      await t.tap(find.byType(ConnectButton));
+      await pumpFor(t, const Duration(milliseconds: 700));
+    },
+  );
+  golden('glass_home_disconnected', style: 'glass');
+  golden(
+    'glass_home_connected',
+    style: 'glass',
+    settle: false,
+    setup: (t) => connect(t, traffic: const Duration(seconds: 8)),
+  );
+  golden(
+    'glass_home_connected_light',
+    style: 'glass',
+    theme: 'light',
+    settle: false,
+    setup: (t) => connect(t, traffic: const Duration(seconds: 8)),
+  );
+  golden(
+    'glass_servers',
+    style: 'glass',
+    size: tallPhone,
+    setup: (t) => tab(t, 'Серверы'),
+  );
+  golden(
+    'glass_settings',
+    style: 'glass',
+    size: const Size(412, 2400),
+    setup: (t) => tab(t, 'Настройки'),
+  );
+  golden(
+    'glass_windows_home_connected',
+    style: 'glass',
+    platform: AppPlatform.windows,
+    size: window,
+    settle: false,
+    setup: (t) => connect(t, traffic: const Duration(seconds: 8)),
+  );
   golden(
     'home_connected',
     settle: false,
@@ -171,11 +229,11 @@ void main() {
   );
 
   // Settings
-  golden('settings', size: const Size(412, 2100), setup: (t) => tab(t, 'Настройки'));
+  golden('settings', size: const Size(412, 2400), setup: (t) => tab(t, 'Настройки'));
   golden(
     'settings_light',
     theme: 'light',
-    size: const Size(412, 2100),
+    size: const Size(412, 2400),
     setup: (t) => tab(t, 'Настройки'),
   );
   golden(

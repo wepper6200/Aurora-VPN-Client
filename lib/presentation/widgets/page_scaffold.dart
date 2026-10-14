@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 
 import '../theme/app_colors.dart';
@@ -15,6 +17,7 @@ class PageScaffold extends StatelessWidget {
     this.leading,
     required this.slivers,
     this.floatingActionButton,
+    this.floatingActionButtonLocation,
     this.opaque = false,
     this.bottomSpacing = true,
   });
@@ -29,6 +32,7 @@ class PageScaffold extends StatelessWidget {
   final Widget? leading;
   final List<Widget> slivers;
   final Widget? floatingActionButton;
+  final FloatingActionButtonLocation? floatingActionButtonLocation;
 
   /// Paints its own background; needed for pages pushed over a tab so the
   /// page underneath doesn't show through during the transition.
@@ -43,7 +47,21 @@ class PageScaffold extends StatelessWidget {
   Widget _buildPage(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.transparent,
-      floatingActionButton: floatingActionButton,
+      floatingActionButton: floatingActionButton == null
+          ? null
+          : Padding(
+              // The shell's bottom bar overlays this page (extendBody) and only
+              // shows up in `padding`, which Scaffold ignores when placing the
+              // FAB; lift it above the bar.
+              padding: EdgeInsets.only(
+                bottom: math.max(
+                  0,
+                  MediaQuery.paddingOf(context).bottom - MediaQuery.viewPaddingOf(context).bottom,
+                ),
+              ),
+              child: floatingActionButton,
+            ),
+      floatingActionButtonLocation: floatingActionButtonLocation,
       body: SafeArea(
         bottom: false,
         child: Align(
@@ -63,7 +81,13 @@ class PageScaffold extends StatelessWidget {
                 ...slivers,
                 if (bottomSpacing)
                   SliverToBoxAdapter(
-                    child: SizedBox(height: AppSpacing.huge + MediaQuery.paddingOf(context).bottom),
+                    child: SizedBox(
+                      // Room for the FAB too, so it never covers the last item.
+                      height:
+                          AppSpacing.huge +
+                          (floatingActionButton != null ? 72 : 0) +
+                          MediaQuery.paddingOf(context).bottom,
+                    ),
                   ),
               ],
             ),

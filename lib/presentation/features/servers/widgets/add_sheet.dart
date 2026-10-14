@@ -23,6 +23,13 @@ Future<void> showAddSheet(BuildContext context, WidgetRef ref) {
     context: context,
     useRootNavigator: true,
     isScrollControlled: true,
+    // Decelerates in, accelerates out (exit faster than entry).
+    sheetAnimationStyle: const AnimationStyle(
+      duration: Duration(milliseconds: 450),
+      reverseDuration: Duration(milliseconds: 220),
+      curve: Easing.emphasizedDecelerate,
+      reverseCurve: Easing.emphasizedAccelerate,
+    ),
     builder: (sheetContext) {
       void close(void Function() then) {
         Navigator.of(sheetContext).pop();

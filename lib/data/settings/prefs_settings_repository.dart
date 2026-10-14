@@ -16,6 +16,7 @@ class PrefsSettingsRepository implements SettingsRepository {
     const d = AppSettings();
     return AppSettings(
       theme: _enum(ThemePreference.values, 'theme') ?? d.theme,
+      designStyle: _enum(DesignStyle.values, 'designStyle') ?? d.designStyle,
       language: _enum(LanguagePreference.values, 'language') ?? d.language,
       onboardingDone: _bool('onboardingDone') ?? d.onboardingDone,
       autoConnect: _bool('autoConnect') ?? d.autoConnect,
@@ -36,6 +37,7 @@ class PrefsSettingsRepository implements SettingsRepository {
   Future<void> save(AppSettings s) async {
     await Future.wait([
       _prefs.setString('${_p}theme', s.theme.name),
+      _prefs.setString('${_p}designStyle', s.designStyle.name),
       _prefs.setString('${_p}language', s.language.name),
       _prefs.setBool('${_p}onboardingDone', s.onboardingDone),
       _prefs.setBool('${_p}autoConnect', s.autoConnect),

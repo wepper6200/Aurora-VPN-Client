@@ -5,4 +5,9 @@
     <string name="notification_connected">Подключено</string>
     <string name="notification_disconnect">Отключить</string>
     <string name="error_no_config">Сервер не выбран</string>
+    <string name="status_disconnected">Отключено</string>
+    <string name="status_disconnecting">Отключение…</string>
+    <string name="widget_description">Статус VPN и кнопка подключения</string>
+    <string name="widget_toggle">Подключить или отключить</string>
+    <string name="widget_hint_setup">Откройте приложение и выберите сервер</string>
 </resources>

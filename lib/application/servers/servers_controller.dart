@@ -74,6 +74,15 @@ class LatencyController extends Notifier<Map<String, LatencyResult>> {
 
   bool get isTesting => state.values.any((r) => r.state == LatencyState.testing);
 
+  bool _autoTested = false;
+
+  /// Tests [servers] the first time it's called in this app session.
+  Future<void> testOnce(Iterable<ServerProfile> servers) async {
+    if (_autoTested || servers.isEmpty) return;
+    _autoTested = true;
+    await test(servers);
+  }
+
   void _set(String id, LatencyResult r) => state = {...state, id: r};
 
   /// Tests [servers] in parallel. Servers the tester can't measure (UDP-based

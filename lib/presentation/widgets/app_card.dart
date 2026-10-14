@@ -1,22 +1,26 @@
-import 'dart:ui' show ImageFilter;
-
 import 'package:flutter/material.dart';
 
 import '../theme/app_colors.dart';
 import '../theme/tokens.dart';
+import 'glass.dart';
 
 enum AppCardVariant {
-  /// Solid surface with a hairline border and soft shadow.
+  /// Default content block.
   solid,
 
-  /// Slightly lighter surface, no shadow — for nested content.
+  /// One step higher — for nested or emphasized content.
   elevated,
 
-  /// Translucent surface over a backdrop blur.
+  /// Translucent surface over a real backdrop blur (Liquid Glass only;
+  /// Material 3 renders it as [elevated]).
   glass,
 }
 
 /// Rounded surface used for nearly every block of content.
+///
+/// Material 3: a tonal `surfaceContainer` fill, no border or shadow, and a
+/// `secondaryContainer` fill when selected. Liquid Glass: a [GlassSurface]
+/// whose rim lights up in the accent color when selected.
 class AppCard extends StatelessWidget {
   const AppCard({
     super.key,
@@ -37,7 +41,7 @@ class AppCard extends StatelessWidget {
   final VoidCallback? onTap;
   final VoidCallback? onLongPress;
 
-  /// Draws a 1.5px accent-gradient border (e.g. for the active server).
+  /// Accent outline (e.g. for the active server).
   final bool gradientBorder;
   final bool selected;
 
@@ -45,14 +49,7 @@ class AppCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final c = context.colors;
     final borderRadius = BorderRadius.circular(radius);
-    final fill = switch (variant) {
-      AppCardVariant.solid => c.surface,
-      AppCardVariant.elevated => c.surfaceElevated,
-      AppCardVariant.glass => c.surfaceGlass,
-    };
-    final showGradient = gradientBorder || selected;
-
-    Widget content = Material(
+    final ink = Material(
       type: MaterialType.transparency,
       child: InkWell(
         onTap: onTap,
@@ -62,49 +59,43 @@ class AppCard extends StatelessWidget {
       ),
     );
 
-    content = AnimatedContainer(
+    if (c.isGlass) {
+      final highlighted = selected || gradientBorder;
+      return AnimatedContainer(
+        duration: AppDurations.medium,
+        curve: AppCurves.standard,
+        decoration: BoxDecoration(borderRadius: borderRadius),
+        child: GlassSurface(
+          borderRadius: borderRadius,
+          blur: variant == AppCardVariant.glass,
+          shadow: variant != AppCardVariant.elevated,
+          tint: selected
+              ? Color.alphaBlend(c.accentStart.withValues(alpha: 0.12), c.surfaceGlass)
+              : variant == AppCardVariant.elevated
+              ? c.surfaceGlass.withValues(alpha: c.surfaceGlass.a * 1.5)
+              : null,
+          accent: highlighted ? c.accentStart : null,
+          child: ClipRRect(borderRadius: borderRadius, child: ink),
+        ),
+      );
+    }
+
+    final scheme = Theme.of(context).colorScheme;
+    final fill = selected
+        ? scheme.secondaryContainer
+        : switch (variant) {
+            AppCardVariant.solid => scheme.surfaceContainer,
+            AppCardVariant.elevated || AppCardVariant.glass => scheme.surfaceContainerHigh,
+          };
+    return AnimatedContainer(
       duration: AppDurations.medium,
       curve: AppCurves.standard,
       decoration: BoxDecoration(
-        color: selected ? Color.alphaBlend(c.accentStart.withValues(alpha: 0.07), fill) : fill,
+        color: fill,
         borderRadius: borderRadius,
-        border: showGradient ? null : Border.all(color: c.border),
+        border: gradientBorder ? Border.all(color: scheme.primary, width: 1.5) : null,
       ),
-      child: ClipRRect(borderRadius: borderRadius, child: content),
-    );
-
-    if (variant == AppCardVariant.glass) {
-      content = ClipRRect(
-        borderRadius: borderRadius,
-        child: BackdropFilter(filter: ImageFilter.blur(sigmaX: 24, sigmaY: 24), child: content),
-      );
-    }
-
-    if (showGradient) {
-      content = Container(
-        padding: const EdgeInsets.all(1.5),
-        decoration: BoxDecoration(
-          gradient: c.accentGradient,
-          borderRadius: BorderRadius.circular(radius + 1.5),
-        ),
-        child: content,
-      );
-    }
-
-    final shadow = variant == AppCardVariant.solid
-        ? [
-            BoxShadow(
-              color: c.shadow,
-              blurRadius: c.isDark ? 28 : 32,
-              spreadRadius: c.isDark ? -6 : -12,
-              offset: Offset(0, c.isDark ? 10 : 12),
-            ),
-          ]
-        : null;
-
-    return DecoratedBox(
-      decoration: BoxDecoration(borderRadius: borderRadius, boxShadow: shadow),
-      child: content,
+      child: ClipRRect(borderRadius: borderRadius, child: ink),
     );
   }
 }

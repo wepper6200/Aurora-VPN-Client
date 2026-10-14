@@ -89,6 +89,11 @@ abstract interface class VpnCoreController {
   Future<void> start(CoreStartRequest request);
   Future<void> stop();
 
+  /// Stores [request] without starting, so system entry points (the quick
+  /// settings tile, the home-screen widget, Always-on VPN) connect to the
+  /// currently selected server without opening the app.
+  Future<void> remember(CoreStartRequest request);
+
   /// Whether a tunnel is already up or starting (e.g. the Android service kept
   /// running while the UI was closed, or Always-on VPN started it).
   Future<bool> isRunning();

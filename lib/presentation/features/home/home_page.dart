@@ -103,6 +103,7 @@ class HomePage extends ConsumerWidget {
                     server: server,
                     latency: latency,
                     onTap: () => context.go(AppRoutes.servers),
+                    onPing: () => ref.read(latencyProvider.notifier).test([server]),
                   ),
                 )
               else if (serversLoading)

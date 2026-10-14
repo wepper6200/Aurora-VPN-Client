@@ -96,6 +96,7 @@ Future<ProviderContainer> pumpApp(
           const StaticInstalledAppsSource(DemoData.apps),
         ),
         latencyTesterProvider.overrideWithValue(const StaticLatencyTester(DemoData.latencies)),
+        autoPingProvider.overrideWithValue(false),
         deepLinksProvider.overrideWithValue(const Stream<Uri>.empty()),
         coreEnvironmentProvider.overrideWith(
           (ref) async => const CoreEnvironment(ruleSetDir: '/rules', dataDir: '/data'),

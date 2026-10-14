@@ -294,5 +294,14 @@
   "dsCardGlass": "Glass card",
   "dsCardSelected": "Selected card",
   "dsCardBody": "Rounded corners, soft shadow and a hairline border.",
-  "dsTypographySample": "The quick brown fox"
+  "dsTypographySample": "The quick brown fox",
+  "settingsDesign": "Style",
+  "designMaterial": "Material 3",
+  "designMaterialSub": "Tonal colors, morphing shapes and a wavy loader",
+  "designGlass": "Liquid Glass",
+  "designGlassSub": "Translucent glass, highlights and a floating tab bar",
+  "onbStyleTitle": "Pick a look",
+  "onbStyleBody": "You can change it any time in Settings.",
+  "pingTest": "Ping test",
+  "pingCheck": "Check ping"
 }

@@ -30,6 +30,8 @@ class SettingsController extends Notifier<AppSettings> {
 
   Future<void> setTheme(ThemePreference theme) => _update(state.copyWith(theme: theme));
 
+  Future<void> setDesignStyle(DesignStyle style) => _update(state.copyWith(designStyle: style));
+
   Future<void> setLanguage(LanguagePreference language) =>
       _update(state.copyWith(language: language));
 

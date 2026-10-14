@@ -3,6 +3,7 @@ import 'dart:convert';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../core/platform.dart';
 import '../../domain/servers/server_profile.dart';
 import '../../domain/vpn/vpn_core.dart';
 import '../di.dart';
@@ -38,9 +39,15 @@ class VpnController extends Notifier<VpnState> {
   static String? _serverKey(ServerProfile? s) =>
       s == null ? null : '${s.id}|${jsonEncode(s.outbound.toJson())}';
 
-  /// Debounced so a burst of toggles restarts the core once.
+  /// Debounced so a burst of toggles restarts the core once. While
+  /// disconnected, the new config is only remembered for the tile/widget.
   void _scheduleReload() {
-    if (state.status != VpnStatus.connected) return;
+    if (state.status != VpnStatus.connected) {
+      if (state.status == VpnStatus.disconnected || state.status == VpnStatus.error) {
+        unawaited(_remember());
+      }
+      return;
+    }
     _reload?.cancel();
     _reload = Timer(reloadDelay, () {
       if (ref.mounted && state.status == VpnStatus.connected) unawaited(connect());
@@ -48,6 +55,21 @@ class VpnController extends Notifier<VpnState> {
   }
 
   static const reloadDelay = Duration(milliseconds: 700);
+
+  /// Android: stores the selected server's config so the quick settings tile
+  /// and the home-screen widget connect to it without opening the app.
+  Future<void> _remember() async {
+    if (ref.read(appPlatformProvider) != AppPlatform.android) return;
+    final server = ref.read(selectedServerProvider);
+    if (server == null) return;
+    try {
+      final request = await ref.read(coreConfigServiceProvider).build(server);
+      if (!ref.mounted || state.isActive) return;
+      await ref.read(vpnCoreProvider).remember(request);
+    } catch (_) {
+      // Best effort: the tile then uses the last connected server.
+    }
+  }
 
   Future<void> connect() async {
     final server = ref.read(selectedServerProvider);

@@ -42,19 +42,31 @@ class IconBadge extends StatelessWidget {
   Widget build(BuildContext context) {
     final c = context.colors;
     final tint = color ?? c.accentStart;
+    if (c.isMaterial) {
+      // Tonal circle; the default (no color) uses the secondary container.
+      final s = Theme.of(context).colorScheme;
+      final (bg, fg) = gradient
+          ? (s.primary, s.onPrimary)
+          : color == null
+          ? (s.secondaryContainer, s.onSecondaryContainer)
+          : (tint.withValues(alpha: c.isDark ? 0.18 : 0.14), tint);
+      return Container(
+        width: size,
+        height: size,
+        decoration: BoxDecoration(color: bg, shape: BoxShape.circle),
+        child: Icon(icon, size: size * 0.5, color: fg),
+      );
+    }
     return Container(
       width: size,
       height: size,
       decoration: BoxDecoration(
-        color: gradient ? null : tint.withValues(alpha: c.isDark ? 0.14 : 0.12),
+        color: gradient ? null : tint.withValues(alpha: c.isDark ? 0.18 : 0.14),
         gradient: gradient ? c.accentGradient : null,
-        borderRadius: BorderRadius.circular(size * 0.32),
+        borderRadius: BorderRadius.circular(size * 0.36),
+        border: gradient ? null : Border.all(color: Colors.white.withValues(alpha: 0.12)),
       ),
-      child: Icon(
-        icon,
-        size: size * 0.5,
-        color: gradient ? (c.isDark ? const Color(0xFF071613) : Colors.white) : tint,
-      ),
+      child: Icon(icon, size: size * 0.5, color: gradient ? c.onAccent : tint),
     );
   }
 }
@@ -163,7 +175,8 @@ class _DotState extends State<_Dot> with SingleTickerProviderStateMixin {
   }
 }
 
-/// Uppercase-ish caption above a group of cards.
+/// Caption above a group of cards: a sentence-case `primary` label in
+/// Material 3, a spaced uppercase label in Liquid Glass.
 class SectionHeader extends StatelessWidget {
   const SectionHeader(this.title, {super.key, this.trailing, this.padding});
 
@@ -181,11 +194,17 @@ class SectionHeader extends StatelessWidget {
       child: Row(
         children: [
           Expanded(
-            child: Text(
-              title,
-              style: Theme.of(context).textTheme.labelMedium!
-                  .copyWith(color: c.textTertiary, letterSpacing: 0.8),
-            ),
+            child: c.isGlass
+                ? Text(
+                    title.toUpperCase(),
+                    style: Theme.of(context).textTheme.labelMedium!
+                        .copyWith(color: c.textTertiary, letterSpacing: 0.8),
+                  )
+                : Text(
+                    title,
+                    style: Theme.of(context).textTheme.titleSmall!
+                        .copyWith(color: Theme.of(context).colorScheme.primary),
+                  ),
           ),
           ?trailing,
         ],

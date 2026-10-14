@@ -109,6 +109,13 @@ class AndroidVpnController implements VpnCoreController {
   Future<void> stop() => _methods.invokeMethod<void>('stop');
 
   @override
+  Future<void> remember(CoreStartRequest request) => _methods.invokeMethod<void>('save', {
+    'config': request.configJson,
+    'label': request.label,
+    'xray': request.xrayConfigJson,
+  });
+
+  @override
   Future<bool> isRunning() async {
     final s = await _methods.invokeMapMethod<String, Object?>('state');
     return s?['status'] == 'connecting' || s?['status'] == 'connected';

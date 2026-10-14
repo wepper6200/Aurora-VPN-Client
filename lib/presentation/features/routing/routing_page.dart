@@ -44,7 +44,7 @@ class RoutingPage extends ConsumerWidget {
         PagePadding(
           child: SliverList.list(
             children: [
-              SectionHeader(l10n.routingMode.toUpperCase()),
+              SectionHeader(l10n.routingMode),
               for (final (mode, icon, title, sub) in [
                 (RoutingMode.global, LucideIcons.globe, l10n.routingGlobal, l10n.routingGlobalSub),
                 (RoutingMode.rules, LucideIcons.split, l10n.routingRules, l10n.routingRulesSub),
@@ -67,7 +67,7 @@ class RoutingPage extends ConsumerWidget {
                     ),
                   ),
                 ),
-              SectionHeader(l10n.routingPresets.toUpperCase()),
+              SectionHeader(l10n.routingPresets),
               item(
                 AnimatedOpacity(
                   duration: AppDurations.medium,
@@ -111,7 +111,7 @@ class RoutingPage extends ConsumerWidget {
                   ),
                   child: Text(l10n.presetsInactive, style: Theme.of(context).textTheme.bodySmall),
                 ),
-              SectionHeader(l10n.routingSplit.toUpperCase()),
+              SectionHeader(l10n.routingSplit),
               item(
                 SettingsGroup(
                   children: [

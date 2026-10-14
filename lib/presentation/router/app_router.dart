@@ -16,6 +16,7 @@ import '../features/settings/design_system_page.dart';
 import '../features/settings/settings_page.dart';
 import '../shell/app_shell.dart';
 import '../shell/branch_container.dart';
+import 'transitions.dart';
 
 abstract final class AppRoutes {
   static const onboarding = '/onboarding';
@@ -63,22 +64,30 @@ final routerProvider = Provider<GoRouter>((ref) {
               GoRoute(
                 path: AppRoutes.servers,
                 builder: (_, _) => const ServersPage(),
+                // Editors grow out of the FAB menu item that opened them.
                 routes: [
                   GoRoute(
                     path: 'subscription/new',
-                    builder: (_, s) =>
-                        SubscriptionEditorPage(initialUrl: s.uri.queryParameters['url']),
+                    pageBuilder: (_, s) => originPage(
+                      s,
+                      SubscriptionEditorPage(initialUrl: s.uri.queryParameters['url']),
+                    ),
                   ),
                   GoRoute(
                     path: 'subscription/:id',
-                    builder: (_, s) => SubscriptionEditorPage(id: s.pathParameters['id']),
+                    pageBuilder: (_, s) =>
+                        originPage(s, SubscriptionEditorPage(id: s.pathParameters['id'])),
                   ),
-                  GoRoute(path: 'server/new', builder: (_, _) => const ServerEditorPage()),
+                  GoRoute(
+                    path: 'server/new',
+                    pageBuilder: (_, s) => originPage(s, const ServerEditorPage()),
+                  ),
                   GoRoute(
                     path: 'server/:id',
-                    builder: (_, s) => ServerEditorPage(id: s.pathParameters['id']),
+                    pageBuilder: (_, s) =>
+                        originPage(s, ServerEditorPage(id: s.pathParameters['id'])),
                   ),
-                  GoRoute(path: 'scan', builder: (_, _) => const ScanQrPage()),
+                  GoRoute(path: 'scan', pageBuilder: (_, s) => originPage(s, const ScanQrPage())),
                 ],
               ),
             ],

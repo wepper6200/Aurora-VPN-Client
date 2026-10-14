@@ -2,6 +2,9 @@ import '../logs/log_entry.dart';
 
 enum ThemePreference { system, light, dark }
 
+/// Visual language of the whole app, picked during onboarding.
+enum DesignStyle { material, glass }
+
 enum LanguagePreference {
   system(null),
   en('en'),
@@ -28,6 +31,7 @@ enum DnsProtocol { doh, dot, udp }
 class AppSettings {
   const AppSettings({
     this.theme = ThemePreference.dark,
+    this.designStyle = DesignStyle.material,
     this.language = LanguagePreference.system,
     this.onboardingDone = false,
     this.autoConnect = false,
@@ -46,6 +50,7 @@ class AppSettings {
   static const defaultDnsServer = 'https://1.1.1.1/dns-query';
 
   final ThemePreference theme;
+  final DesignStyle designStyle;
   final LanguagePreference language;
   final bool onboardingDone;
   final bool autoConnect;
@@ -65,6 +70,7 @@ class AppSettings {
 
   AppSettings copyWith({
     ThemePreference? theme,
+    DesignStyle? designStyle,
     LanguagePreference? language,
     bool? onboardingDone,
     bool? autoConnect,
@@ -81,6 +87,7 @@ class AppSettings {
   }) {
     return AppSettings(
       theme: theme ?? this.theme,
+      designStyle: designStyle ?? this.designStyle,
       language: language ?? this.language,
       onboardingDone: onboardingDone ?? this.onboardingDone,
       autoConnect: autoConnect ?? this.autoConnect,
@@ -99,6 +106,7 @@ class AppSettings {
 
   List<Object?> get _props => [
     theme,
+    designStyle,
     language,
     onboardingDone,
     autoConnect,

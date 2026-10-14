@@ -131,6 +131,10 @@ class WindowsVpnController implements VpnCoreController {
     }
   }
 
+  /// Windows has no tile or widget; the tray always goes through the app.
+  @override
+  Future<void> remember(CoreStartRequest request) async {}
+
   @override
   Future<void> stop({bool silent = false}) async {
     _stopping = true;

@@ -123,16 +123,21 @@ class CurrentServerCard extends StatelessWidget {
     required this.server,
     required this.latency,
     required this.onTap,
+    this.onPing,
   });
 
   final ServerProfile server;
   final LatencyResult? latency;
   final VoidCallback onTap;
 
+  /// Measures this server's ping.
+  final VoidCallback? onPing;
+
   @override
   Widget build(BuildContext context) {
     final c = context.colors;
     final theme = Theme.of(context);
+    final l10n = context.l10n;
     return AppCard(
       onTap: onTap,
       padding: const EdgeInsets.all(AppSpacing.md),
@@ -155,7 +160,14 @@ class CurrentServerCard extends StatelessWidget {
               ],
             ),
           ),
-          LatencyPill(result: latency),
+          if (latency == null && onPing != null)
+            IconButton(
+              tooltip: l10n.pingCheck,
+              onPressed: onPing,
+              icon: Icon(LucideIcons.gauge, size: 20, color: c.accentStart),
+            )
+          else
+            LatencyPill(result: latency, onTap: onPing),
           const SizedBox(width: AppSpacing.xs),
           Icon(LucideIcons.chevronRight, size: 20, color: c.textTertiary),
         ],

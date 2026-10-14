@@ -31,7 +31,7 @@ class DesignSystemPage extends StatelessWidget {
         PagePadding(
           child: SliverList.list(
             children: [
-              item(SectionHeader(l10n.dsColors.toUpperCase())),
+              item(SectionHeader(l10n.dsColors)),
               item(
                 Wrap(
                   spacing: AppSpacing.md,
@@ -48,7 +48,7 @@ class DesignSystemPage extends StatelessWidget {
                   ],
                 ),
               ),
-              item(SectionHeader(l10n.dsTypography.toUpperCase())),
+              item(SectionHeader(l10n.dsTypography)),
               item(
                 AppCard(
                   child: Column(
@@ -64,7 +64,7 @@ class DesignSystemPage extends StatelessWidget {
                   ),
                 ),
               ),
-              item(SectionHeader(l10n.dsButtons.toUpperCase())),
+              item(SectionHeader(l10n.dsButtons)),
               item(
                 GradientButton(
                   label: l10n.dsPrimaryAction,
@@ -101,7 +101,7 @@ class DesignSystemPage extends StatelessWidget {
                   ],
                 ),
               ),
-              item(SectionHeader(l10n.dsCards.toUpperCase())),
+              item(SectionHeader(l10n.dsCards)),
               item(_cardDemo(context, AppCardVariant.solid, l10n.dsCardSolid)),
               const SizedBox(height: AppSpacing.md),
               item(_cardDemo(context, AppCardVariant.elevated, l10n.dsCardElevated)),
@@ -109,7 +109,7 @@ class DesignSystemPage extends StatelessWidget {
               item(_cardDemo(context, AppCardVariant.glass, l10n.dsCardGlass)),
               const SizedBox(height: AppSpacing.md),
               item(_cardDemo(context, AppCardVariant.solid, l10n.dsCardSelected, selected: true)),
-              item(SectionHeader(l10n.dsStatus.toUpperCase())),
+              item(SectionHeader(l10n.dsStatus)),
               item(
                 Wrap(
                   spacing: AppSpacing.sm,
@@ -123,7 +123,7 @@ class DesignSystemPage extends StatelessWidget {
                   ],
                 ),
               ),
-              item(SectionHeader(l10n.dsFeedback.toUpperCase())),
+              item(SectionHeader(l10n.dsFeedback)),
               item(
                 const AppCard(
                   child: Row(

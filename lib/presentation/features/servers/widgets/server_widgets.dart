@@ -7,6 +7,7 @@ import '../../../../domain/servers/server_profile.dart';
 import '../../../theme/app_colors.dart';
 import '../../../theme/tokens.dart';
 import '../../../widgets/app_card.dart';
+import '../../../widgets/expressive_loader.dart';
 
 /// Round avatar: the flag emoji if the name starts with one, else an initial.
 class ServerAvatar extends StatelessWidget {
@@ -21,78 +22,131 @@ class ServerAvatar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final c = context.colors;
+    final s = Theme.of(context).colorScheme;
     final flag = _flag.firstMatch(name)?.group(1);
     final letter = name.trim().isEmpty ? '?' : name.trim().characters.first.toUpperCase();
-    final onAccent = c.isDark ? const Color(0xFF071613) : Colors.white;
+    final Color fg;
+    final BoxDecoration deco;
+    if (c.isMaterial) {
+      fg = active ? s.onPrimary : s.onSecondaryContainer;
+      deco = BoxDecoration(
+        shape: BoxShape.circle,
+        color: active ? s.primary : s.secondaryContainer,
+      );
+    } else {
+      fg = active ? c.onAccent : c.accentStart;
+      deco = BoxDecoration(
+        shape: BoxShape.circle,
+        border: Border.all(color: Colors.white.withValues(alpha: active ? 0.4 : 0.12)),
+        gradient: active
+            ? c.accentGradient
+            : LinearGradient(
+                colors: [
+                  c.accentStart.withValues(alpha: c.isDark ? 0.2 : 0.16),
+                  c.accentEnd.withValues(alpha: c.isDark ? 0.2 : 0.16),
+                ],
+              ),
+      );
+    }
     return AnimatedContainer(
       duration: AppDurations.medium,
       width: size,
       height: size,
       alignment: Alignment.center,
-      decoration: BoxDecoration(
-        shape: BoxShape.circle,
-        gradient: active
-            ? c.accentGradient
-            : LinearGradient(
-                colors: [
-                  c.accentStart.withValues(alpha: c.isDark ? 0.16 : 0.14),
-                  c.accentEnd.withValues(alpha: c.isDark ? 0.16 : 0.14),
-                ],
-              ),
-      ),
+      decoration: deco,
       child: flag != null
           ? Text(flag, style: TextStyle(fontSize: size * 0.48))
           : Text(
               letter,
               style: Theme.of(context).textTheme.titleMedium!
-                  .copyWith(color: active ? onAccent : c.accentStart, fontSize: size * 0.4),
+                  .copyWith(color: fg, fontSize: size * 0.4),
             ),
     );
   }
 }
 
-/// "48 ms" pill colored by quality, a spinner while testing.
+/// "48 ms" pill colored by quality, with signal bars so the quality doesn't
+/// rely on color alone; a spinner while testing.
 class LatencyPill extends StatelessWidget {
-  const LatencyPill({super.key, required this.result});
+  const LatencyPill({super.key, required this.result, this.onTap});
 
   final LatencyResult? result;
+
+  /// Re-runs the test when set.
+  final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
     final c = context.colors;
     final r = result;
     if (r == null) return const SizedBox.shrink();
-    final style = Theme.of(context).textTheme.labelMedium!;
+    final style = Theme.of(context).textTheme.labelMedium!.copyWith(fontWeight: FontWeight.w700);
 
     Widget child;
     Color color;
     switch (r.state) {
       case LatencyState.testing:
         color = c.textTertiary;
-        child = SizedBox.square(
-          dimension: 12,
-          child: CircularProgressIndicator(strokeWidth: 1.8, color: c.accentStart),
+        child = ExpressiveLoader(
+          key: const ValueKey('testing'),
+          size: 16,
+          color: c.accentStart,
+          contained: false,
         );
       case LatencyState.failed:
         color = c.danger;
-        child = Text(context.l10n.latencyTimeout, style: style.copyWith(color: color));
+        child = Row(
+          key: const ValueKey('failed'),
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(Icons.signal_cellular_connected_no_internet_0_bar_rounded, size: 14, color: color),
+            const SizedBox(width: 4),
+            Text(context.l10n.latencyTimeout, style: style.copyWith(color: color)),
+          ],
+        );
       case LatencyState.ok:
         final ms = r.ms!;
-        color = ms <= 120
-            ? c.success
+        final (col, bars) = ms <= 120
+            ? (c.success, Icons.signal_cellular_alt_rounded)
             : ms <= 300
-            ? c.warning
-            : c.danger;
-        child = Text('$ms ms', style: style.copyWith(color: color));
+            ? (c.warning, Icons.signal_cellular_alt_2_bar_rounded)
+            : (c.danger, Icons.signal_cellular_alt_1_bar_rounded);
+        color = col;
+        child = Row(
+          key: ValueKey(ms),
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(bars, size: 14, color: color),
+            const SizedBox(width: 4),
+            Text('$ms ms', style: style.copyWith(color: color)),
+          ],
+        );
     }
-    return AnimatedContainer(
+    final pill = AnimatedContainer(
       duration: AppDurations.medium,
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
       decoration: BoxDecoration(
-        color: color.withValues(alpha: c.isDark ? 0.14 : 0.1),
+        color: color.withValues(alpha: c.isDark ? 0.16 : 0.12),
         borderRadius: BorderRadius.circular(AppRadii.pill),
       ),
-      child: AnimatedSwitcher(duration: AppDurations.fast, child: child),
+      child: AnimatedSwitcher(
+        duration: AppDurations.medium,
+        switchInCurve: Curves.easeOutBack,
+        transitionBuilder: (child, a) => ScaleTransition(
+          scale: Tween(begin: 0.6, end: 1.0).animate(a),
+          child: FadeTransition(opacity: a, child: child),
+        ),
+        child: child,
+      ),
+    );
+    if (onTap == null || r.state == LatencyState.testing) return pill;
+    return Tooltip(
+      message: context.l10n.pingCheck,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(AppRadii.pill),
+        child: pill,
+      ),
     );
   }
 }
@@ -129,12 +183,16 @@ class ServerTile extends StatelessWidget {
     required this.onTap,
     required this.onToggleFavorite,
     required this.onMenu,
+    this.onPing,
   });
 
   final ServerProfile server;
   final bool selected;
   final LatencyResult? latency;
   final VoidCallback onTap;
+
+  /// Re-tests just this server (tap on its latency pill).
+  final VoidCallback? onPing;
   final VoidCallback onToggleFavorite;
   final ValueChanged<ServerMenuAction> onMenu;
 
@@ -178,7 +236,7 @@ class ServerTile extends StatelessWidget {
             ),
           ),
           const SizedBox(width: AppSpacing.sm),
-          LatencyPill(result: latency),
+          LatencyPill(result: latency, onTap: onPing),
           const SizedBox(width: AppSpacing.xs),
           IconButton(
             tooltip: server.favorite ? l10n.actionUnfavorite : l10n.actionFavorite,

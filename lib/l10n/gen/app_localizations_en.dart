@@ -888,4 +888,31 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get dsTypographySample => 'The quick brown fox';
+
+  @override
+  String get settingsDesign => 'Style';
+
+  @override
+  String get designMaterial => 'Material 3';
+
+  @override
+  String get designMaterialSub => 'Tonal colors, morphing shapes and a wavy loader';
+
+  @override
+  String get designGlass => 'Liquid Glass';
+
+  @override
+  String get designGlassSub => 'Translucent glass, highlights and a floating tab bar';
+
+  @override
+  String get onbStyleTitle => 'Pick a look';
+
+  @override
+  String get onbStyleBody => 'You can change it any time in Settings.';
+
+  @override
+  String get pingTest => 'Ping test';
+
+  @override
+  String get pingCheck => 'Check ping';
 }

@@ -1,5 +1,3 @@
-import 'dart:ui' show ImageFilter;
-
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -11,6 +9,7 @@ import '../../core/platform.dart';
 import '../theme/app_colors.dart';
 import '../theme/tokens.dart';
 import '../widgets/app_background.dart';
+import '../widgets/glass.dart';
 import 'app_logo.dart';
 import 'window_title_bar.dart';
 
@@ -30,8 +29,9 @@ final _destinations = <_Destination>[
   _Destination(LucideIcons.settings, LucideIcons.settings600, (l) => l.navSettings),
 ];
 
-/// Top-level layout: navigation rail on desktop / wide screens, glass bottom
-/// bar on phones. Hosts the custom window caption on Windows.
+/// Top-level layout: navigation rail on desktop / wide screens, a bottom bar
+/// on phones (Material 3 navigation bar or a floating Liquid Glass capsule).
+/// Hosts the custom window caption on Windows.
 class AppShell extends ConsumerWidget {
   const AppShell({super.key, required this.shell, required this.body});
 
@@ -72,6 +72,8 @@ class AppShell extends ConsumerWidget {
             : content,
         bottomNavigationBar: useRail
             ? null
+            : context.colors.isGlass
+            ? _GlassTabBar(currentIndex: shell.currentIndex, onSelect: _onSelect)
             : _BottomNav(currentIndex: shell.currentIndex, onSelect: _onSelect),
       ),
     );
@@ -88,33 +90,40 @@ class _SideNav extends StatelessWidget {
   Widget build(BuildContext context) {
     final c = context.colors;
     final l10n = context.l10n;
-    return Container(
-      decoration: BoxDecoration(
-        border: Border(right: BorderSide(color: c.border)),
+    final rail = NavigationRail(
+      backgroundColor: c.isGlass ? Colors.transparent : null,
+      selectedIndex: currentIndex,
+      onDestinationSelected: onSelect,
+      leading: const Padding(
+        padding: EdgeInsets.only(top: AppSpacing.sm, bottom: AppSpacing.lg),
+        child: AppLogo(size: 34),
       ),
-      child: NavigationRail(
-        selectedIndex: currentIndex,
-        onDestinationSelected: onSelect,
-        leading: const Padding(
-          padding: EdgeInsets.only(top: AppSpacing.sm, bottom: AppSpacing.lg),
-          child: AppLogo(size: 34),
-        ),
-        destinations: [
-          for (final d in _destinations)
-            NavigationRailDestination(
-              icon: Icon(d.icon),
-              selectedIcon: Icon(d.selectedIcon),
-              label: Text(d.label(l10n)),
-              padding: const EdgeInsets.symmetric(vertical: AppSpacing.xs),
-            ),
-        ],
+      destinations: [
+        for (final d in _destinations)
+          NavigationRailDestination(
+            icon: Icon(d.icon),
+            selectedIcon: Icon(d.selectedIcon),
+            label: Text(d.label(l10n)),
+            padding: const EdgeInsets.symmetric(vertical: AppSpacing.xs),
+          ),
+      ],
+    );
+    if (c.isMaterial) return rail;
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(AppSpacing.md, AppSpacing.md, 0, AppSpacing.md),
+      child: GlassSurface(
+        blur: true,
+        borderRadius: BorderRadius.circular(AppRadii.xxl),
+        child: rail,
       ),
     );
   }
 }
 
-class _BottomNav extends StatelessWidget {
-  const _BottomNav({required this.currentIndex, required this.onSelect});
+/// Liquid Glass tab bar: a floating blurred capsule; the selection lens
+/// slides between tabs with a slight springy overshoot.
+class _GlassTabBar extends StatelessWidget {
+  const _GlassTabBar({required this.currentIndex, required this.onSelect});
 
   final int currentIndex;
   final ValueChanged<int> onSelect;
@@ -123,31 +132,139 @@ class _BottomNav extends StatelessWidget {
   Widget build(BuildContext context) {
     final c = context.colors;
     final l10n = context.l10n;
-    return ClipRect(
-      child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 24, sigmaY: 24),
-        child: DecoratedBox(
-          decoration: BoxDecoration(
-            color: c.surfaceGlass,
-            border: Border(top: BorderSide(color: c.border)),
-          ),
-          child: NavigationBar(
-            selectedIndex: currentIndex,
-            onDestinationSelected: (i) {
-              HapticFeedback.selectionClick();
-              onSelect(i);
+    final label = Theme.of(context).textTheme.labelSmall!;
+    final count = _destinations.length;
+    return SafeArea(
+      top: false,
+      minimum: const EdgeInsets.fromLTRB(AppSpacing.lg, 0, AppSpacing.lg, AppSpacing.md),
+      child: GlassSurface(
+        blur: true,
+        borderRadius: BorderRadius.circular(AppRadii.pill),
+        tint: c.isDark ? const Color(0x1FFFFFFF) : const Color(0xA6FFFFFF),
+        child: SizedBox(
+          height: 66,
+          child: LayoutBuilder(
+            builder: (context, box) {
+              final slot = (box.maxWidth - 12) / count;
+              return Stack(
+                children: [
+                  AnimatedPositioned(
+                    duration: const Duration(milliseconds: 520),
+                    curve: Curves.easeOutBack,
+                    left: 6 + slot * currentIndex,
+                    top: 6,
+                    bottom: 6,
+                    width: slot,
+                    child: GlassSurface(
+                      borderRadius: BorderRadius.circular(AppRadii.pill),
+                      shadow: false,
+                      tint: c.isDark
+                          ? Colors.white.withValues(alpha: 0.14)
+                          : Colors.white.withValues(alpha: 0.85),
+                      child: const SizedBox.expand(),
+                    ),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 6),
+                    child: Row(
+                      children: [
+                        for (var i = 0; i < count; i++)
+                          Expanded(
+                            child: Semantics(
+                              selected: i == currentIndex,
+                              button: true,
+                              child: GestureDetector(
+                                behavior: HitTestBehavior.opaque,
+                                onTap: () {
+                                  HapticFeedback.selectionClick();
+                                  onSelect(i);
+                                },
+                                child: _GlassTab(
+                                  icon: i == currentIndex
+                                      ? _destinations[i].selectedIcon
+                                      : _destinations[i].icon,
+                                  label: _destinations[i].label(l10n),
+                                  selected: i == currentIndex,
+                                  style: label,
+                                ),
+                              ),
+                            ),
+                          ),
+                      ],
+                    ),
+                  ),
+                ],
+              );
             },
-            destinations: [
-              for (final d in _destinations)
-                NavigationDestination(
-                  icon: Icon(d.icon),
-                  selectedIcon: Icon(d.selectedIcon),
-                  label: d.label(l10n),
-                ),
-            ],
           ),
         ),
       ),
+    );
+  }
+}
+
+class _GlassTab extends StatelessWidget {
+  const _GlassTab({
+    required this.icon,
+    required this.label,
+    required this.selected,
+    required this.style,
+  });
+
+  final IconData icon;
+  final String label;
+  final bool selected;
+  final TextStyle style;
+
+  @override
+  Widget build(BuildContext context) {
+    final c = context.colors;
+    final color = selected ? c.accentStart : c.textSecondary;
+    return Column(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        AnimatedScale(
+          scale: selected ? 1.12 : 1,
+          duration: const Duration(milliseconds: 380),
+          curve: Curves.easeOutBack,
+          child: Icon(icon, size: 22, color: color),
+        ),
+        const SizedBox(height: 3),
+        Text(
+          label,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          style: style.copyWith(color: color, fontSize: 10.5),
+        ),
+      ],
+    );
+  }
+}
+
+/// Material 3 navigation bar on a tonal `surfaceContainer`.
+class _BottomNav extends StatelessWidget {
+  const _BottomNav({required this.currentIndex, required this.onSelect});
+
+  final int currentIndex;
+  final ValueChanged<int> onSelect;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = context.l10n;
+    return NavigationBar(
+      selectedIndex: currentIndex,
+      onDestinationSelected: (i) {
+        HapticFeedback.selectionClick();
+        onSelect(i);
+      },
+      destinations: [
+        for (final d in _destinations)
+          NavigationDestination(
+            icon: Icon(d.icon),
+            selectedIcon: Icon(d.selectedIcon),
+            label: d.label(l10n),
+          ),
+      ],
     );
   }
 }

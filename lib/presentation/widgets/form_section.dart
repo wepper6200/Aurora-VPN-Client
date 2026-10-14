@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../theme/tokens.dart';
 import 'app_card.dart';
+import 'choice_group.dart';
 import 'decorations.dart';
 
 /// Titled card that stacks form fields with even spacing.
@@ -16,7 +17,7 @@ class FormSection extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        SectionHeader(title.toUpperCase()),
+        SectionHeader(title),
         AppCard(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -55,18 +56,7 @@ class FormSegmented<T> extends StatelessWidget {
       children: [
         Text(label, style: Theme.of(context).textTheme.labelMedium),
         const SizedBox(height: AppSpacing.sm),
-        SegmentedButton<T>(
-          showSelectedIcon: false,
-          segments: [
-            for (final e in options.entries)
-              ButtonSegment<T>(
-                value: e.key,
-                label: Text(e.value, maxLines: 2, textAlign: TextAlign.center),
-              ),
-          ],
-          selected: {value},
-          onSelectionChanged: (s) => onChanged(s.first),
-        ),
+        ChoiceGroup<T>(value: value, options: options, onChanged: onChanged),
       ],
     );
   }

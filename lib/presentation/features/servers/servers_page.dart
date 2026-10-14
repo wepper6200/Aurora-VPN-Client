@@ -1,9 +1,12 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
+import '../../../application/di.dart';
 import '../../../application/servers/servers_controller.dart';
 import '../../../core/l10n.dart';
 import '../../../data/subscriptions/subscription_fetcher.dart';
@@ -19,6 +22,7 @@ import '../../widgets/decorations.dart';
 import '../../widgets/dialogs.dart';
 import '../../widgets/feedback.dart';
 import '../../widgets/page_scaffold.dart';
+import 'widgets/add_menu.dart';
 import 'widgets/add_sheet.dart';
 import 'widgets/server_widgets.dart';
 import 'widgets/subscription_header.dart';
@@ -60,9 +64,29 @@ class _ServersPageState extends ConsumerState<ServersPage> {
   final _search = TextEditingController();
 
   @override
+  void initState() {
+    super.initState();
+    if (ref.read(autoPingProvider)) {
+      WidgetsBinding.instance.addPostFrameCallback((_) async {
+        final servers = await ref.read(serversProvider.future);
+        if (mounted) unawaited(ref.read(latencyProvider.notifier).testOnce(servers));
+      });
+    }
+  }
+
+  @override
   void dispose() {
     _search.dispose();
     super.dispose();
+  }
+
+  /// Makes [server] current and returns to Home, where the connect button is.
+  Future<void> _select(ServerProfile server) async {
+    unawaited(HapticFeedback.selectionClick());
+    await ref.read(selectedServerIdProvider.notifier).select(server.id);
+    // A beat to let the selection highlight land before switching tabs.
+    await Future<void>.delayed(const Duration(milliseconds: 180));
+    if (mounted) context.go(AppRoutes.home);
   }
 
   List<_Row> _flatten(List<ServerGroup> groups) {
@@ -148,20 +172,30 @@ class _ServersPageState extends ConsumerState<ServersPage> {
     final allSubs = ref.watch(subscriptionsProvider).value ?? const [];
     final isEmpty = groupsAsync.hasValue && allServers.isEmpty && allSubs.isEmpty;
 
+    final glass = context.colors.isGlass;
     return PageScaffold(
       title: l10n.serversTitle,
+      // Material 3 adds through the FAB menu; glass keeps a header button.
+      floatingActionButton: glass ? null : const AddFabMenu(),
       actions: [
-        AppIconButton(
-          icon: LucideIcons.zap,
-          tooltip: l10n.serversTestLatency,
-          onPressed: testing || allServers.isEmpty ? null : _testAll,
-          color: testing ? context.colors.accentStart : null,
-        ),
-        AppIconButton(
-          icon: LucideIcons.plus,
-          tooltip: l10n.serversAdd,
-          onPressed: () => showAddSheet(context, ref),
-        ),
+        if (allServers.isNotEmpty)
+          Tooltip(
+            message: l10n.serversTestLatency,
+            child: SoftButton(
+              label: l10n.pingTest,
+              icon: LucideIcons.gauge,
+              tone: SoftButtonTone.accent,
+              height: 44,
+              loading: testing,
+              onPressed: _testAll,
+            ),
+          ),
+        if (glass)
+          AppIconButton(
+            icon: LucideIcons.plus,
+            tooltip: l10n.serversAdd,
+            onPressed: () => showAddSheet(context, ref),
+          ),
       ],
       slivers: [
         if (!isEmpty)
@@ -255,7 +289,7 @@ class _ServersPageState extends ConsumerState<ServersPage> {
               onMenu: (a) => _onSubscriptionMenu(group.subscription!, a),
             ),
           ),
-          _ManualHeaderRow() => SectionHeader(l10n.serversManualGroup.toUpperCase()),
+          _ManualHeaderRow() => SectionHeader(l10n.serversManualGroup),
           _EmptyGroupRow() => Padding(
             padding: const EdgeInsets.all(AppSpacing.lg),
             child: Text(
@@ -272,10 +306,8 @@ class _ServersPageState extends ConsumerState<ServersPage> {
                 server: server,
                 selected: server.id == selectedId,
                 latency: latency[server.id],
-                onTap: () {
-                  HapticFeedback.selectionClick();
-                  ref.read(selectedServerIdProvider.notifier).select(server.id);
-                },
+                onTap: () => _select(server),
+                onPing: () => ref.read(latencyProvider.notifier).test([server]),
                 onToggleFavorite: () => ref.read(serverActionsProvider).toggleFavorite(server),
                 onMenu: (a) => _onServerMenu(server, a),
               ),
@@ -348,7 +380,7 @@ class _FilterBar extends ConsumerWidget {
           onSelected: notifier.setSort,
           itemBuilder: (context) => [
             menuItem(ServerSort.none, LucideIcons.listFilter, l10n.serversSortNone),
-            menuItem(ServerSort.latency, LucideIcons.zap, l10n.serversSortLatency),
+            menuItem(ServerSort.latency, LucideIcons.gauge, l10n.serversSortLatency),
             menuItem(ServerSort.name, LucideIcons.arrowDownAZ, l10n.serversSortName),
           ],
           child: Padding(

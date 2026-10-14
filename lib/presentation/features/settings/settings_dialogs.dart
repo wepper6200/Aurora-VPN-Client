@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../../core/l10n.dart';
 import '../../../domain/settings/app_settings.dart';
 import '../../theme/tokens.dart';
+import '../../widgets/choice_group.dart';
 
 /// Well-known public resolvers offered as one-tap presets.
 const _dnsPresets = <String, Map<DnsProtocol, String>>{
@@ -85,15 +86,14 @@ class _DnsDialogState extends State<_DnsDialog> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            SegmentedButton<DnsProtocol>(
-              showSelectedIcon: false,
-              segments: const [
-                ButtonSegment(value: DnsProtocol.doh, label: Text('DoH')),
-                ButtonSegment(value: DnsProtocol.dot, label: Text('DoT')),
-                ButtonSegment(value: DnsProtocol.udp, label: Text('UDP')),
-              ],
-              selected: {_protocol},
-              onSelectionChanged: (s) => _setProtocol(s.first),
+            ChoiceGroup<DnsProtocol>(
+              value: _protocol,
+              options: const {
+                DnsProtocol.doh: 'DoH',
+                DnsProtocol.dot: 'DoT',
+                DnsProtocol.udp: 'UDP',
+              },
+              onChanged: _setProtocol,
             ),
             const SizedBox(height: AppSpacing.lg),
             Wrap(

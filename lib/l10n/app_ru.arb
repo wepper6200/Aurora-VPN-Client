@@ -276,5 +276,14 @@
   "dsCardGlass": "Стеклянная карточка",
   "dsCardSelected": "Выбранная карточка",
   "dsCardBody": "Скруглённые углы, мягкая тень и тонкая обводка.",
-  "dsTypographySample": "Съешь же ещё этих мягких булок"
+  "dsTypographySample": "Съешь же ещё этих мягких булок",
+  "settingsDesign": "Оформление",
+  "designMaterial": "Material 3",
+  "designMaterialSub": "Тональные цвета, живые формы и «змейка» при подключении",
+  "designGlass": "Liquid Glass",
+  "designGlassSub": "Прозрачное стекло, блики и плавающая панель",
+  "onbStyleTitle": "Выберите оформление",
+  "onbStyleBody": "Его можно поменять в любой момент в настройках.",
+  "pingTest": "Тест пинга",
+  "pingCheck": "Проверить пинг"
 }

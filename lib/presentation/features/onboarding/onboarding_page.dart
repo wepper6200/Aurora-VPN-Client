@@ -12,6 +12,7 @@ import '../../theme/tokens.dart';
 import '../../widgets/app_background.dart';
 import '../../widgets/app_buttons.dart';
 import '../../widgets/decorations.dart';
+import '../../widgets/design_style_picker.dart';
 
 class OnboardingPage extends ConsumerStatefulWidget {
   const OnboardingPage({super.key});
@@ -24,7 +25,8 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
   final _pages = PageController();
   int _index = 0;
 
-  static const _count = 3;
+  /// The style picker plus three intro slides.
+  static const _count = 4;
 
   @override
   void dispose() {
@@ -100,7 +102,8 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
                       itemCount: _count,
                       onPageChanged: (i) => setState(() => _index = i),
                       itemBuilder: (context, i) {
-                        final (art, title, body) = slides[i];
+                        if (i == 0) return const _StyleSlide();
+                        final (art, title, body) = slides[i - 1];
                         return _Slide(art: art, title: title, body: body);
                       },
                     ),
@@ -125,6 +128,38 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
             ),
           ),
         ),
+      ),
+    );
+  }
+}
+
+/// First page: pick Material 3 or Liquid Glass; the app re-themes live.
+class _StyleSlide extends ConsumerWidget {
+  const _StyleSlide();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = context.l10n;
+    final theme = Theme.of(context);
+    final style = ref.watch(settingsProvider.select((s) => s.designStyle));
+    return SingleChildScrollView(
+      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.xxl),
+      child: Column(
+        children: [
+          const SizedBox(height: AppSpacing.lg),
+          Text(l10n.onbStyleTitle, style: theme.textTheme.headlineMedium, textAlign: TextAlign.center),
+          const SizedBox(height: AppSpacing.sm),
+          Text(
+            l10n.onbStyleBody,
+            style: theme.textTheme.bodyLarge!.copyWith(color: context.colors.textSecondary),
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: AppSpacing.xxl),
+          DesignStylePicker(
+            value: style,
+            onChanged: ref.read(settingsProvider.notifier).setDesignStyle,
+          ),
+        ],
       ),
     );
   }

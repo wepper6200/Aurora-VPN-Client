@@ -1,6 +1,8 @@
 import 'dart:convert';
 
+import 'package:aurora_vpn/application/di.dart';
 import 'package:aurora_vpn/application/servers/servers_controller.dart';
+import 'package:aurora_vpn/data/mock/mock_vpn_core.dart';
 import 'package:aurora_vpn/data/subscriptions/subscription_fetcher.dart';
 import 'package:aurora_vpn/presentation/features/servers/widgets/server_widgets.dart';
 import 'package:flutter/material.dart';
@@ -24,7 +26,7 @@ void main() {
 
     expect(find.text('Nebula Cloud'), findsWidgets);
     expect(find.text('Orbit Lab'), findsOneWidget);
-    expect(find.text('MY CONFIGS'), findsOneWidget);
+    expect(find.text('My configs'), findsOneWidget);
     expect(find.byType(ServerTile), findsNWidgets(7));
   });
 
@@ -49,17 +51,28 @@ void main() {
     expect(find.widgetWithText(ServerTile, 'Germany · Frankfurt'), findsOneWidget);
   });
 
-  testWidgets('tapping a server selects it for the home screen', (tester) async {
+  testWidgets('tapping a server selects it and returns to the home tab', (tester) async {
     final container = await pumpApp(tester, prefs: en, size: const Size(412, 1600));
     await _openServers(tester);
 
     await tester.tap(find.text('Netherlands · Amsterdam'));
+    await tester.pump(const Duration(milliseconds: 300));
     await tester.pumpAndSettle();
     expect(container.read(selectedServerProvider)?.id, 's2');
+    // Remembered for the quick settings tile and the home-screen widget.
+    final core = container.read(vpnCoreProvider) as MockVpnCoreController;
+    expect(core.remembered.last.serverId, 's2');
+    expect(core.remembered.last.label, 'Netherlands · Amsterdam');
 
-    await tester.tap(find.text('Home'));
-    await tester.pumpAndSettle();
-    expect(find.text('Netherlands · Amsterdam'), findsWidgets);
+    // Back on Home without touching the tab bar.
+    expect(find.text('Tap to connect'), findsOneWidget);
+    final branch = find
+        .ancestor(of: find.text('Tap to connect'), matching: find.byType(AnimatedOpacity))
+        .first;
+    final homeFade = tester.widget<FadeTransition>(
+      find.descendant(of: branch, matching: find.byType(FadeTransition)).first,
+    );
+    expect(homeFade.opacity.value, 1);
   });
 
   testWidgets('latency test runs in parallel and sorting uses the result', (tester) async {
