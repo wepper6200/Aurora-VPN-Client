@@ -25,7 +25,7 @@ abstract final class LinkSerializer {
           'aid': '${o.alterId}',
           'scy': o.vmessSecurity,
           'net': t.type.name,
-          'type': 'none',
+          'type': t.httpObfs ? 'http' : 'none',
           'host': t.host,
           'path': t.type == TransportType.grpc ? t.serviceName : t.path,
           'tls': o.tls.enabled ? 'tls' : '',
@@ -55,6 +55,7 @@ abstract final class LinkSerializer {
     'serviceName': t.serviceName,
     'mode': t.mode,
     'extra': t.extra,
+    'headerType': t.headerType,
   };
 
   static Map<String, String> _tlsQuery(TlsConfig t) => {

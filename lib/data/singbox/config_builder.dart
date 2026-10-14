@@ -376,8 +376,13 @@ abstract final class SingBoxConfigBuilder {
     final t = o.tls;
     final sni = t.sni.isNotEmpty ? t.sni : (_isIp(o.host) ? '' : o.host);
     final reality = t.mode == TlsMode.reality;
-    // Reality requires uTLS; default to Chrome when the link didn't say.
-    final fp = t.fingerprint.isNotEmpty ? t.fingerprint : (reality ? 'chrome' : '');
+    // Default to a Chrome fingerprint when the link didn't say: Reality needs
+    // uTLS, and Go's stock TLS hello is easy for DPI to single out and throttle
+    // — the usual reason a plain TCP+TLS server "often doesn't work". QUIC
+    // protocols (Hysteria2, TUIC) can't use uTLS.
+    final fp = t.fingerprint.isNotEmpty
+        ? t.fingerprint
+        : (o.protocol.isUdpBased ? '' : 'chrome');
     return {
       'enabled': forceEnabled || t.enabled,
       if (sni.isNotEmpty) 'server_name': sni,

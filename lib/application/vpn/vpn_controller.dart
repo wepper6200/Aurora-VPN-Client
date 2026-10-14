@@ -23,7 +23,12 @@ class VpnController extends Notifier<VpnState> {
 
     // Anything that ends up in the core config is applied live: another
     // server, an edited server, routing, DNS/MTU/IPv6/kill switch/log level.
-    ref.listen(selectedServerProvider.select(_serverKey), (_, _) => _scheduleReload());
+    // null → server is the list loading at launch, not a change: restarting
+    // then would hang a tunnel that kept running while the UI was closed.
+    ref.listen(
+      selectedServerProvider.select(_serverKey),
+      (prev, _) => _scheduleReload(restart: prev != null),
+    );
     ref.listen(routingProvider, (_, _) => _scheduleReload());
     ref.listen(
       settingsProvider.select(
@@ -41,13 +46,14 @@ class VpnController extends Notifier<VpnState> {
 
   /// Debounced so a burst of toggles restarts the core once. While
   /// disconnected, the new config is only remembered for the tile/widget.
-  void _scheduleReload() {
+  void _scheduleReload({bool restart = true}) {
     if (state.status != VpnStatus.connected) {
       if (state.status == VpnStatus.disconnected || state.status == VpnStatus.error) {
         unawaited(_remember());
       }
       return;
     }
+    if (!restart) return;
     _reload?.cancel();
     _reload = Timer(reloadDelay, () {
       if (ref.mounted && state.status == VpnStatus.connected) unawaited(connect());

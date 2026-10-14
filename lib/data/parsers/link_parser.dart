@@ -128,6 +128,8 @@ abstract final class LinkParser {
           host: j['host'],
           service: isGrpc ? j['path'] : null,
           mode: j['mode'],
+          // vmess JSON: `type` is the TCP header type (none / http).
+          header: j['type'],
         ),
         tls: _tls(tlsMode == 'tls' || tlsMode == 'reality' ? tlsMode : 'none', {
           'sni': j['sni'] ?? '',
@@ -297,6 +299,7 @@ abstract final class LinkParser {
     String? service,
     String? mode,
     String? extra,
+    String? header,
   }) {
     final t = TransportType.parse(type);
     if (t == null) throw LinkParseException('transport "$type" is not supported');
@@ -308,11 +311,12 @@ abstract final class LinkParser {
       serviceName: service ?? '',
       mode: isXhttp ? mode ?? '' : '',
       extra: isXhttp ? _jsonOrEmpty(extra) : '',
+      headerType: t == TransportType.tcp ? TransportConfig.parseHeader(header) : '',
     );
   }
 
   /// Standard share-link transport params (`type`, `path`, `host`,
-  /// `serviceName`, and for XHTTP `mode` + JSON `extra`).
+  /// `serviceName`, `headerType` for TCP, and for XHTTP `mode` + JSON `extra`).
   static TransportConfig _transportFromQuery(Map<String, String> q) => _transport(
     q['type'],
     path: q['path'],
@@ -320,6 +324,7 @@ abstract final class LinkParser {
     service: q['serviceName'],
     mode: q['mode'],
     extra: q['extra'],
+    header: q['headerType'],
   );
 
   /// Keeps `extra` only if it is a JSON object (it is passed to Xray verbatim).

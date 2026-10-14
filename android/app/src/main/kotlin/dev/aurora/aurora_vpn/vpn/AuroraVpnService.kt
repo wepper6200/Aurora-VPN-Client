@@ -183,7 +183,10 @@ class AuroraVpnService : VpnService(), PlatformInterface, CommandServerHandler {
 
     private fun startTunnel() {
         if (!wantRunning) return
-        if (VpnHub.status == VpnStatus.STARTED && commandServer != null) return
+        if (VpnHub.status == VpnStatus.STARTED && commandServer != null) {
+            reloadTunnel()
+            return
+        }
         val config = VpnHub.loadConfig(this)
         if (config == null) {
             wantRunning = false
@@ -212,6 +215,33 @@ class AuroraVpnService : VpnService(), PlatformInterface, CommandServerHandler {
             connectClient()
         } catch (e: Throwable) {
             Log.e(TAG, "start failed", e)
+            wantRunning = false
+            stopTunnel(e.message ?: e.toString())
+        }
+    }
+
+    /**
+     * A start request while connected: another server or changed settings.
+     * Applies the saved config in place and always reports the status, so
+     * the UI never waits on a request that changed nothing.
+     */
+    private fun reloadTunnel() {
+        val server = commandServer ?: return
+        val config = VpnHub.loadConfig(this)
+        if (config == null) {
+            VpnHub.setStatus(VpnStatus.STARTED)
+            return
+        }
+        VpnHub.setStatus(VpnStatus.STARTING)
+        try {
+            label = VpnHub.loadLabel(this)
+            runCatching { Xraybridge.stop() }
+            VpnHub.loadXray(this)?.let { Xraybridge.start(it) }
+            server.startOrReloadService(config, OverrideOptions())
+            VpnHub.setStatus(VpnStatus.STARTED)
+            showNotification(getString(R.string.notification_connected))
+        } catch (e: Throwable) {
+            Log.e(TAG, "reload failed", e)
             wantRunning = false
             stopTunnel(e.message ?: e.toString())
         }
@@ -444,7 +474,10 @@ class AuroraVpnService : VpnService(), PlatformInterface, CommandServerHandler {
         }
 
         val pfd = builder.establish() ?: error("android: VPN was not prepared or was revoked")
+        // A reload opens a new TUN; release the previous descriptor.
+        val previous = tunFd
         tunFd = pfd
+        if (previous != null) runCatching { previous.close() }
         return pfd.fd
     }
 

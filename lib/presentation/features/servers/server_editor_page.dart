@@ -140,6 +140,8 @@ class _ServerEditorPageState extends ConsumerState<ServerEditorPage> {
               path: _v('path'),
               host: _v('hostHeader'),
               serviceName: _v('serviceName'),
+              // Not editable here; keep TCP HTTP obfuscation from the import.
+              headerType: transport == prev?.transport.type ? prev!.transport.headerType : '',
             )
           : const TransportConfig(),
       tls: tlsMode == TlsMode.none

@@ -146,7 +146,26 @@ void main() {
           ),
         ),
       );
-      expect(p['tls'], {'enabled': true, 'insecure': true});
+      // A Chrome fingerprint is the default: Go's stock TLS hello gets throttled by DPI.
+      expect(p['tls'], {
+        'enabled': true,
+        'insecure': true,
+        'utls': {'enabled': true, 'fingerprint': 'chrome'},
+      });
+    });
+
+    test('QUIC protocols get no uTLS fingerprint', () {
+      final p = proxyOf(
+        build(
+          const OutboundConfig(
+            protocol: ProxyProtocol.hysteria2,
+            host: 'h.example.com',
+            port: 443,
+            password: 'secret',
+          ),
+        ),
+      );
+      expect((p['tls']! as Map).containsKey('utls'), isFalse);
     });
 
     test('reality forces uTLS and carries key + short id', () {

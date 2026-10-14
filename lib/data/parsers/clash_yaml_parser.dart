@@ -120,9 +120,22 @@ abstract final class ClashYamlParser {
 
   static TransportConfig _transport(Map<String, Object?> p) {
     final network = '${p['network'] ?? 'tcp'}';
+    Map<String, Object?> opts(String k) => (p[k] as Map?)?.cast<String, Object?>() ?? const {};
+    // Clash `network: http` is TCP with HTTP header obfuscation, not HTTP/2
+    // (that one is `h2`).
+    if (network.toLowerCase() == 'http') {
+      final o = opts('http-opts');
+      final paths = o['path'] as List<Object?>? ?? const [];
+      final headers = (o['headers'] as Map?)?.cast<String, Object?>() ?? const {};
+      final hosts = headers['Host'] ?? headers['host'];
+      return TransportConfig(
+        headerType: 'http',
+        path: paths.isEmpty ? '' : '${paths.first}',
+        host: hosts is List ? hosts.map((h) => '$h').join(',') : '${hosts ?? ''}',
+      );
+    }
     final type = TransportType.parse(network);
     if (type == null) throw LinkParseException('network "$network" is not supported');
-    Map<String, Object?> opts(String k) => (p[k] as Map?)?.cast<String, Object?>() ?? const {};
     switch (type) {
       case TransportType.ws:
         final o = opts('ws-opts');

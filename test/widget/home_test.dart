@@ -16,7 +16,7 @@ void main() {
 
     // Falls back to the first favorite when nothing was selected.
     expect(find.text('Germany · Frankfurt'), findsOneWidget);
-    expect(find.text('VLESS · Reality'), findsOneWidget);
+    expect(find.text('VLESS · Reality · TCP'), findsOneWidget);
     expect(find.text('Nebula Cloud'), findsOneWidget);
     expect(find.text('23 days left'), findsOneWidget);
   });

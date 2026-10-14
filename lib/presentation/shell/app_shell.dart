@@ -90,8 +90,8 @@ class _SideNav extends StatelessWidget {
   Widget build(BuildContext context) {
     final c = context.colors;
     final l10n = context.l10n;
-    final rail = NavigationRail(
-      backgroundColor: c.isGlass ? Colors.transparent : null,
+    if (c.isGlass) return _GlassRail(currentIndex: currentIndex, onSelect: onSelect);
+    return NavigationRail(
       selectedIndex: currentIndex,
       onDestinationSelected: onSelect,
       leading: const Padding(
@@ -108,13 +108,90 @@ class _SideNav extends StatelessWidget {
           ),
       ],
     );
-    if (c.isMaterial) return rail;
+  }
+}
+
+/// Liquid Glass side rail (desktop): a blurred glass column whose selection
+/// lens slides between destinations — the vertical twin of [_GlassTabBar].
+class _GlassRail extends StatelessWidget {
+  const _GlassRail({required this.currentIndex, required this.onSelect});
+
+  final int currentIndex;
+  final ValueChanged<int> onSelect;
+
+  static const _slot = 72.0;
+
+  @override
+  Widget build(BuildContext context) {
+    final c = context.colors;
+    final l10n = context.l10n;
+    final label = Theme.of(context).textTheme.labelSmall!;
     return Padding(
       padding: const EdgeInsets.fromLTRB(AppSpacing.md, AppSpacing.md, 0, AppSpacing.md),
       child: GlassSurface(
         blur: true,
         borderRadius: BorderRadius.circular(AppRadii.xxl),
-        child: rail,
+        child: SizedBox(
+          width: 84,
+          child: Column(
+            children: [
+              const Padding(
+                padding: EdgeInsets.only(top: AppSpacing.lg, bottom: AppSpacing.lg),
+                child: AppLogo(size: 34),
+              ),
+              SizedBox(
+                height: _slot * _destinations.length,
+                child: Stack(
+                  children: [
+                    AnimatedPositioned(
+                      duration: const Duration(milliseconds: 520),
+                      curve: Curves.easeOutBack,
+                      top: _slot * currentIndex + 4,
+                      left: 6,
+                      right: 6,
+                      height: _slot - 8,
+                      child: GlassSurface(
+                        borderRadius: BorderRadius.circular(AppRadii.lg),
+                        shadow: false,
+                        tint: c.isDark
+                            ? Colors.white.withValues(alpha: 0.14)
+                            : Colors.white.withValues(alpha: 0.85),
+                        child: const SizedBox.expand(),
+                      ),
+                    ),
+                    Column(
+                      children: [
+                        for (var i = 0; i < _destinations.length; i++)
+                          SizedBox(
+                            height: _slot,
+                            child: Semantics(
+                              selected: i == currentIndex,
+                              button: true,
+                              child: MouseRegion(
+                                cursor: SystemMouseCursors.click,
+                                child: GestureDetector(
+                                  behavior: HitTestBehavior.opaque,
+                                  onTap: () => onSelect(i),
+                                  child: _GlassTab(
+                                    icon: i == currentIndex
+                                        ? _destinations[i].selectedIcon
+                                        : _destinations[i].icon,
+                                    label: _destinations[i].label(l10n),
+                                    selected: i == currentIndex,
+                                    style: label,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }

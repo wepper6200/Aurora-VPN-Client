@@ -159,14 +159,22 @@ String serverSubtitle(ServerProfile s) {
   } else if (s.security == 'tls') {
     parts.add('TLS');
   }
-  if (s.transport != 'tcp' && s.transport != 'udp') {
+  // VLESS / VMess / Trojan always name their transport, TCP included.
+  final v2ray = const {
+    ProxyProtocol.vless,
+    ProxyProtocol.vmess,
+    ProxyProtocol.trojan,
+  }.contains(s.protocol);
+  if (v2ray || (s.transport != 'tcp' && s.transport != 'udp')) {
     parts.add(switch (s.transport) {
+      'tcp' => s.outbound.transport.httpObfs ? 'TCP (HTTP)' : 'TCP',
       'ws' => 'WS',
       'grpc' => 'gRPC',
       'h2' => 'H2',
       'httpupgrade' => 'HTTPUpgrade',
+      'xhttp' => 'XHTTP',
       'quic' => 'QUIC',
-      final t => t,
+      final t => t.toUpperCase(),
     });
   }
   return parts.join(' · ');

@@ -30,12 +30,15 @@ class TransportConfig {
     this.serviceName = '',
     this.mode = '',
     this.extra = '',
+    this.headerType = '',
   });
 
   final TransportType type;
+
+  /// Path (ws/httpupgrade/xhttp/h2, or the request path of the TCP HTTP header).
   final String path;
 
-  /// Host header (ws/httpupgrade/xhttp) or authority (h2).
+  /// Host header (ws/httpupgrade/xhttp/TCP HTTP header) or authority (h2).
   final String host;
 
   /// gRPC service name.
@@ -47,6 +50,15 @@ class TransportConfig {
   /// XHTTP `extra` object as raw JSON (padding, xmux, downloadSettings…).
   final String extra;
 
+  /// TCP header obfuscation: `http` disguises the stream as plain HTTP
+  /// (`headerType=http`). Only Xray-core implements it.
+  final String headerType;
+
+  bool get httpObfs => type == TransportType.tcp && headerType == 'http';
+
+  /// `headerType` from links / configs; anything but `http` means none.
+  static String parseHeader(String? s) => s?.trim().toLowerCase() == 'http' ? 'http' : '';
+
   Map<String, Object?> toJson() => {
     'type': type.name,
     if (path.isNotEmpty) 'path': path,
@@ -54,6 +66,7 @@ class TransportConfig {
     if (serviceName.isNotEmpty) 'serviceName': serviceName,
     if (mode.isNotEmpty) 'mode': mode,
     if (extra.isNotEmpty) 'extra': extra,
+    if (headerType.isNotEmpty) 'header': headerType,
   };
 
   factory TransportConfig.fromJson(Map<String, Object?> j) => TransportConfig(
@@ -63,6 +76,7 @@ class TransportConfig {
     serviceName: j['serviceName'] as String? ?? '',
     mode: j['mode'] as String? ?? '',
     extra: j['extra'] as String? ?? '',
+    headerType: j['header'] as String? ?? '',
   );
 
   @override
@@ -73,10 +87,11 @@ class TransportConfig {
       other.host == host &&
       other.serviceName == serviceName &&
       other.mode == mode &&
-      other.extra == extra;
+      other.extra == extra &&
+      other.headerType == headerType;
 
   @override
-  int get hashCode => Object.hash(type, path, host, serviceName, mode, extra);
+  int get hashCode => Object.hash(type, path, host, serviceName, mode, extra, headerType);
 }
 
 enum TlsMode { none, tls, reality }
@@ -224,7 +239,8 @@ class OutboundConfig {
   final String xrayOutbound;
 
   /// Runs through Xray-core (behind sing-box) instead of sing-box itself.
-  bool get requiresXray => xrayOutbound.isNotEmpty || transport.type == TransportType.xhttp;
+  bool get requiresXray =>
+      xrayOutbound.isNotEmpty || transport.type == TransportType.xhttp || transport.httpObfs;
 
   /// Short transport label for the UI.
   String get transportLabel => switch (protocol) {

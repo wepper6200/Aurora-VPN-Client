@@ -128,7 +128,8 @@ abstract final class XrayConfigBuilder {
         'tlsSettings': {
           if (sni.isNotEmpty) 'serverName': sni,
           if (tls.alpn.isNotEmpty) 'alpn': tls.alpn,
-          if (tls.fingerprint.isNotEmpty) 'fingerprint': tls.fingerprint,
+          // A browser fingerprint: Go's own TLS hello is easy for DPI to spot.
+          'fingerprint': tls.fingerprint.isNotEmpty ? tls.fingerprint : 'chrome',
           if (tls.insecure) 'allowInsecure': true,
         },
       if (tls.mode == TlsMode.reality)
@@ -137,6 +138,19 @@ abstract final class XrayConfigBuilder {
           'fingerprint': tls.fingerprint.isNotEmpty ? tls.fingerprint : 'chrome',
           'publicKey': tls.realityPublicKey,
           if (tls.realityShortId.isNotEmpty) 'shortId': tls.realityShortId,
+        },
+      if (t.httpObfs)
+        'rawSettings': {
+          'header': {
+            'type': 'http',
+            'request': {
+              'path': [t.path.isEmpty ? '/' : t.path],
+              if (t.host.isNotEmpty)
+                'headers': {
+                  'Host': t.host.split(',').map((h) => h.trim()).where((h) => h.isNotEmpty).toList(),
+                },
+            },
+          },
         },
       if (t.type == TransportType.ws)
         'wsSettings': {
