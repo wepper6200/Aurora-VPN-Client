@@ -6,6 +6,14 @@ on:
     tags: ['v*']
   pull_request:
   workflow_dispatch:
+    # Manual runs can build one platform, e.g. after Android-only changes:
+    #   gh workflow run build -f platforms=android
+    inputs:
+      platforms:
+        description: Platforms to build
+        type: choice
+        options: [all, android, windows]
+        default: all
 
 permissions:
   contents: read
@@ -38,6 +46,7 @@ jobs:
   android:
     name: Android APK
     needs: test
+    if: github.event_name != 'workflow_dispatch' || inputs.platforms != 'windows'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -95,6 +104,7 @@ jobs:
   windows:
     name: Windows
     needs: test
+    if: github.event_name != 'workflow_dispatch' || inputs.platforms != 'android'
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v4

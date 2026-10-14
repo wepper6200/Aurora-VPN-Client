@@ -14,6 +14,7 @@ import dev.aurora.aurora_vpn.vpn.AuroraVpnService
 import dev.aurora.aurora_vpn.vpn.VpnHub
 import dev.aurora.aurora_vpn.vpn.VpnStatus
 import dev.aurora.aurora_vpn.vpn.VpnSurfaces
+import dev.aurora.aurora_vpn.vpn.VpnToggleActivity
 
 /**
  * Home-screen widget: a translucent capsule with a power button, the status
@@ -86,7 +87,9 @@ class VpnWidgetProvider : AppWidgetProvider() {
                         PendingIntent.getService(context, 22, start, flags)
                     }
                 } else {
-                    openApp
+                    // Consent needed (or no server yet): the invisible toggle
+                    // activity asks for it without opening the app.
+                    PendingIntent.getActivity(context, 23, VpnToggleActivity.intent(context), flags)
                 }
             }
             views.setOnClickPendingIntent(R.id.widget_toggle, toggle)

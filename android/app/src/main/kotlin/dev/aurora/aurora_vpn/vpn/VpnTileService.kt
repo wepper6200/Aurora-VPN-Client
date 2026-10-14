@@ -8,13 +8,13 @@ import android.os.Build
 import android.service.quicksettings.Tile
 import android.service.quicksettings.TileService
 import android.util.Log
-import dev.aurora.aurora_vpn.MainActivity
 import dev.aurora.aurora_vpn.R
 
 /**
  * Quick settings tile: one tap connects to the selected server or
- * disconnects. Opens the app when it can't connect on its own (no server
- * yet, or the VPN consent dialog still has to be shown).
+ * disconnects, without opening the app. Only the system VPN consent dialog
+ * may appear (when Android asks again); the app opens only if no server has
+ * ever been picked.
  */
 class VpnTileService : TileService() {
 
@@ -41,35 +41,42 @@ class VpnTileService : TileService() {
         when (VpnHub.status) {
             VpnStatus.STARTED, VpnStatus.STARTING -> AuroraVpnService.stop(this)
             VpnStatus.STOPPING -> Unit
-            VpnStatus.STOPPED ->
-                if (VpnSurfaces.canStartSilently(this)) {
-                    runCatching { AuroraVpnService.start(this) }.onFailure {
-                        Log.w("AuroraTile", "start from tile", it)
-                        openApp()
-                    }
-                } else {
-                    openApp()
-                }
+            VpnStatus.STOPPED -> connect()
         }
         render()
     }
 
-    @SuppressLint("StartActivityAndCollapseDeprecated")
-    private fun openApp() {
-        val intent = Intent(this, MainActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-        if (Build.VERSION.SDK_INT >= 34) {
-            startActivityAndCollapse(
-                PendingIntent.getActivity(
-                    this,
-                    0,
-                    intent,
-                    PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT,
-                ),
-            )
-        } else {
-            @Suppress("DEPRECATION")
-            startActivityAndCollapse(intent)
+    private fun connect() {
+        // Fast path: consent is in place, start right here with the shade open.
+        if (VpnSurfaces.canStartSilently(this)) {
+            val started = runCatching { AuroraVpnService.start(this) }
+                .onFailure { Log.w("AuroraTile", "direct start refused", it) }
+                .isSuccess
+            if (started) return
         }
+        // Consent dialog needed, or Android refused a background start: the
+        // invisible toggle activity handles both without opening the app.
+        launch(VpnToggleActivity.intent(this))
+    }
+
+    @SuppressLint("StartActivityAndCollapseDeprecated")
+    private fun launch(intent: Intent) {
+        val run = Runnable {
+            if (Build.VERSION.SDK_INT >= 34) {
+                startActivityAndCollapse(
+                    PendingIntent.getActivity(
+                        this,
+                        0,
+                        intent,
+                        PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT,
+                    ),
+                )
+            } else {
+                @Suppress("DEPRECATION")
+                startActivityAndCollapse(intent)
+            }
+        }
+        if (isLocked) unlockAndRun(run) else run.run()
     }
 
     private fun render() {

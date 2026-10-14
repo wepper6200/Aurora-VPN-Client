@@ -76,6 +76,14 @@
                 android:value="vpn" />
         </service>
 
+        <!-- Connects from the tile / widget without opening the app UI. -->
+        <activity
+            android:name=".vpn.VpnToggleActivity"
+            android:excludeFromRecents="true"
+            android:exported="false"
+            android:taskAffinity=""
+            android:theme="@style/InvisibleTheme" />
+
         <!-- Quick settings tile: connect / disconnect from the notification shade. -->
         <service
             android:name=".vpn.VpnTileService"
