@@ -1,4 +1,4 @@
-@Tags(['core'])
+﻿@Tags(['core'])
 library;
 
 import 'dart:async';
@@ -146,14 +146,99 @@ void main() {
     timeout: const Timeout(Duration(seconds: 60)),
   );
 
+  int corePid() {
+    final pids = File('${runDir.path}\\core.pids').readAsLinesSync();
+    return int.parse(pids.firstWhere((l) => l.startsWith('pid=')).substring(4));
+  }
+
+  test(
+    'disconnecting while still connecting ends disconnected, not in "exit -1"',
+    () async {
+      final c = WindowsVpnController(
+        coreDir: coreDir,
+        runDir: runDir.path,
+        systemProxy: FakeProxy(),
+      );
+      final states = <VpnState>[];
+      final sub = c.states.listen(states.add);
+      final starting = c.start(await request());
+      // Let sing-box spawn, then cancel before it reports "started".
+      await Future<void>.delayed(const Duration(milliseconds: 50));
+      await c.stop();
+      await starting;
+      await pumpEventQueue();
+      expect(states.map((s) => s.status), isNot(contains(VpnStatus.error)), reason: '$states');
+      expect(states.last.status, VpnStatus.disconnected);
+      expect(await c.isRunning(), isFalse);
+      await sub.cancel();
+      await c.dispose();
+    },
+    skip: skip,
+    timeout: const Timeout(Duration(seconds: 60)),
+  );
+
+  test(
+    'a second start while the first is connecting wins without an error',
+    () async {
+      final proxy = FakeProxy();
+      final c = WindowsVpnController(coreDir: coreDir, runDir: runDir.path, systemProxy: proxy);
+      final states = <VpnState>[];
+      final sub = c.states.listen(states.add);
+      final first = c.start(await request());
+      final req = await request();
+      await Future.wait([first, c.start(req)]);
+      await pumpEventQueue();
+      expect(states.map((s) => s.status), isNot(contains(VpnStatus.error)), reason: '$states');
+      expect(states.last.status, VpnStatus.connected);
+      expect(proxy.value, '127.0.0.1:${req.systemProxyPort}');
+      await c.stop();
+      expect(proxy.value, isNull);
+      await sub.cancel();
+      await c.dispose();
+    },
+    skip: skip,
+    timeout: const Timeout(Duration(seconds: 60)),
+  );
+
+  test(
+    'a core killed from outside while connected is restarted',
+    () async {
+      final proxy = FakeProxy();
+      final c = WindowsVpnController(coreDir: coreDir, runDir: runDir.path, systemProxy: proxy);
+      final states = <VpnState>[];
+      final sub = c.states.listen(states.add);
+      final req = await request();
+      await c.start(req);
+      await pumpEventQueue();
+      expect(states.last.status, VpnStatus.connected);
+      final pid = corePid();
+      states.clear();
+
+      final reconnected = c.states
+          .firstWhere((s) => s.status == VpnStatus.connected)
+          .timeout(const Duration(seconds: 30));
+      Process.killPid(pid); // TerminateProcess(-1), like an anti-cheat or task manager
+      await reconnected;
+      expect(states.map((s) => s.status), isNot(contains(VpnStatus.error)), reason: '$states');
+      expect(corePid(), isNot(pid));
+      expect(proxy.value, '127.0.0.1:${req.systemProxyPort}');
+      await sub.cancel();
+      await c.dispose();
+    },
+    skip: skip,
+    timeout: const Timeout(Duration(seconds: 60)),
+  );
+
   test(
     'recover() kills an orphaned core and clears our stale proxy',
     () async {
       final proxy = FakeProxy();
+      // Still alive in this test: it must not bring the killed core back.
       final crashed = WindowsVpnController(
         coreDir: coreDir,
         runDir: runDir.path,
         systemProxy: proxy,
+        maxRestarts: 0,
       );
       await crashed.start(await request());
       final pids = File('${runDir.path}\\core.pids').readAsLinesSync();
