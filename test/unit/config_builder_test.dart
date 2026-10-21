@@ -495,6 +495,13 @@ void main() {
       expect(ks['strict_route'], isTrue);
       expect(ks['interface_name'], 'AuroraTun');
     });
+
+    test('windows TUN avoids the sample subnet other clients use', () {
+      const opts = CoreOptions(capture: CaptureMode.tun, ruleSetDir: 'C:/rules');
+      final address = inbound(build(vlessBase, options: opts))['address']! as List;
+      expect(address, isNot(contains('172.19.0.1/30')));
+      expect(address.first, '172.24.183.1/30');
+    });
   });
 
   test('log level follows settings', () {

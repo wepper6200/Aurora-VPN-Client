@@ -268,7 +268,12 @@ abstract final class SingBoxConfigBuilder {
       'type': 'tun',
       'tag': tunTag,
       if (!options.android) 'interface_name': 'AuroraTun',
-      'address': ['172.19.0.1/30', 'fdfe:dcba:9876::1/126'],
+      // Windows: not sing-box's sample 172.19.0.1/30, which other clients
+      // (Happ, Hiddify…) also use. While one of them is up, the same address
+      // on our adapter makes "start inbound" fail.
+      'address': options.android
+          ? ['172.19.0.1/30', 'fdfe:dcba:9876::1/126']
+          : ['172.24.183.1/30', 'fd8e:a0c0:5f1e::1/126'],
       'mtu': settings.mtu,
       'auto_route': true,
       // Android: the VpnService owns routing. Windows: strict route is the kill switch.

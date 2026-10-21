@@ -66,7 +66,7 @@ class CoreConfigService {
     final settings = _ref.read(settingsProvider);
     final platform = _ref.read(appPlatformProvider);
     final freePort = _ref.read(freePortProvider);
-    final bridge = server.outbound.requiresXray ? _newBridge() : null;
+    final bridge = server.outbound.requiresXray ? _newBridge(await freePort()) : null;
     final options = switch (platform) {
       AppPlatform.android => CoreOptions(
         capture: CaptureMode.tun,
@@ -119,7 +119,9 @@ class CoreConfigService {
   static String _token(int length) =>
       List.generate(length, (_) => _rnd.nextInt(36).toRadixString(36)).join();
 
-  /// Fresh port and credentials for every session.
-  static XrayBridge _newBridge() =>
-      XrayBridge(port: 20000 + _rnd.nextInt(40000), username: _token(16), password: _token(16));
+  /// Fresh port and credentials for every session. The port comes from the
+  /// OS: a random one can land in a range Windows reserves (Hyper-V, WinNAT),
+  /// where Xray fails to listen.
+  static XrayBridge _newBridge(int port) =>
+      XrayBridge(port: port, username: _token(16), password: _token(16));
 }

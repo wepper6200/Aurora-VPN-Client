@@ -316,7 +316,8 @@ class WindowsVpnController implements VpnCoreController {
   }
 
   static final _singboxLevel = RegExp(r'\b(TRACE|DEBUG|INFO|WARN|ERROR|FATAL|PANIC)\b');
-  static final _xrayLevel = RegExp(r'\[(Debug|Info|Warning|Error)\]');
+  static final _uptime = RegExp(r'^\[\d+\]\s*');
+  static final _xrayLevel =RegExp(r'\[(Debug|Info|Warning|Error)\]');
 
   void _parseSingboxLine(String line) {
     final m = _singboxLevel.firstMatch(line);
@@ -327,7 +328,10 @@ class WindowsVpnController implements VpnCoreController {
       'ERROR' || 'FATAL' || 'PANIC' => LogLevel.error,
       _ => LogLevel.info,
     };
-    final message = m == null ? line : line.substring(m.end).trim();
+    // FATAL lines carry the uptime in seconds: "FATAL[0000] start service: …".
+    final message = (m == null ? line : line.substring(m.end))
+        .replaceFirst(_uptime, '')
+        .trim();
     if (level == LogLevel.error) _lastError = LogMask.apply(message);
     _log(level, message);
   }
