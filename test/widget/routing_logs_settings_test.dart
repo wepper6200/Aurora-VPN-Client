@@ -7,7 +7,9 @@ import 'package:aurora_vpn/core/platform.dart';
 import 'package:aurora_vpn/data/logs/log_file_target.dart';
 import 'package:aurora_vpn/data/mock/demo_data.dart';
 import 'package:aurora_vpn/domain/routing/routing_settings.dart';
+import 'package:aurora_vpn/domain/settings/app_settings.dart';
 import 'package:aurora_vpn/domain/vpn/vpn_core.dart';
+import 'package:aurora_vpn/presentation/features/settings/settings_page.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -182,17 +184,29 @@ void main() {
       expect(find.text('Tunnel mode'), findsNothing);
     });
 
-    testWidgets('windows shows autostart and tunnel mode', (tester) async {
-      await pumpApp(tester, platform: AppPlatform.windows, size: const Size(460, 2400), prefs: en);
-      await tester.tap(find.text('Settings'));
-      await tester.pumpAndSettle();
-      expect(find.text('Launch at startup'), findsOneWidget);
+    testWidgets('windows: tunnel mode on the home screen, autostart in settings', (tester) async {
+      final container = await pumpApp(
+        tester,
+        platform: AppPlatform.windows,
+        size: const Size(460, 2400),
+        prefs: en,
+      );
       expect(find.text('Tunnel mode'), findsOneWidget);
       await tester.tap(find.text('TUN'));
       await tester.pumpAndSettle();
       expect(
         find.text('TUN captures all traffic and requires administrator rights.'),
         findsOneWidget,
+      );
+      expect(container.read(settingsProvider).windowsMode, WindowsTunnelMode.tun);
+
+      await tester.tap(find.text('Settings'));
+      await tester.pumpAndSettle();
+      expect(find.text('Launch at startup'), findsOneWidget);
+      // The home branch stays mounted behind the settings tab.
+      expect(
+        find.descendant(of: find.byType(SettingsPage), matching: find.text('Tunnel mode')),
+        findsNothing,
       );
     });
   });

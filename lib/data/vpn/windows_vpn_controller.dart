@@ -365,7 +365,8 @@ class WindowsVpnController implements VpnCoreController {
         _trafficSub = res
             .transform(const Utf8Decoder(allowMalformed: true))
             .transform(const LineSplitter())
-            .listen(_onTraffic);
+            // Closing the client on stop ends the stream with an error.
+            .listen(_onTraffic, onError: (Object _) {});
       } catch (_) {
         // Stats are best-effort; the tunnel works without them.
       }

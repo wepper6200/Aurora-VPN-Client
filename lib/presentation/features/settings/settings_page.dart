@@ -137,46 +137,6 @@ class SettingsPage extends ConsumerWidget {
                     ),
                 ],
               ),
-              if (platform.isDesktop) ...[
-                const SizedBox(height: AppSpacing.md),
-                AppCard(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      FormSegmented<WindowsTunnelMode>(
-                        label: l10n.settingsWindowsMode,
-                        value: s.windowsMode,
-                        onChanged: (v) => ctrl.update((s) => s.copyWith(windowsMode: v)),
-                        options: {
-                          WindowsTunnelMode.systemProxy: l10n.modeProxy,
-                          WindowsTunnelMode.tun: l10n.modeTun,
-                        },
-                      ),
-                      AnimatedSize(
-                        duration: AppDurations.medium,
-                        child: s.windowsMode == WindowsTunnelMode.tun
-                            ? Padding(
-                                padding: const EdgeInsets.only(top: AppSpacing.md),
-                                child: Row(
-                                  children: [
-                                    Icon(LucideIcons.shieldAlert, size: 16, color: c.warning),
-                                    const SizedBox(width: AppSpacing.sm),
-                                    Expanded(
-                                      child: Text(
-                                        l10n.modeTunHint,
-                                        style: Theme.of(context).textTheme.bodySmall,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              )
-                            : const SizedBox(width: double.infinity),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-
               SectionHeader(l10n.settingsNetwork),
               SettingsGroup(
                 children: [

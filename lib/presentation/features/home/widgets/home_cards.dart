@@ -5,9 +5,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../../../application/servers/servers_controller.dart';
+import '../../../../application/settings/settings_controller.dart';
 import '../../../../core/clock.dart';
 import '../../../../core/l10n.dart';
 import '../../../../domain/servers/server_profile.dart';
+import '../../../../domain/settings/app_settings.dart';
 import '../../../../domain/subscriptions/subscription.dart';
 import '../../../../domain/vpn/vpn_core.dart';
 import '../../../theme/app_colors.dart';
@@ -16,6 +18,7 @@ import '../../../theme/typography.dart';
 import '../../../util/formatters.dart';
 import '../../../widgets/app_card.dart';
 import '../../../widgets/decorations.dart';
+import '../../../widgets/form_section.dart';
 import '../../../widgets/sparkline.dart';
 import '../../../widgets/usage_bar.dart';
 import '../../servers/widgets/server_widgets.dart';
@@ -238,6 +241,55 @@ class SpeedCard extends StatelessWidget {
           SizedBox(
             height: 36,
             child: Sparkline(values: history, color: color),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Windows: system proxy or TUN, switchable right from the home screen.
+class TunnelModeCard extends ConsumerWidget {
+  const TunnelModeCard({super.key});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = context.l10n;
+    final c = context.colors;
+    final mode = ref.watch(settingsProvider.select((s) => s.windowsMode));
+    return AppCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          FormSegmented<WindowsTunnelMode>(
+            label: l10n.settingsWindowsMode,
+            value: mode,
+            onChanged: (v) =>
+                ref.read(settingsProvider.notifier).update((s) => s.copyWith(windowsMode: v)),
+            options: {
+              WindowsTunnelMode.systemProxy: l10n.modeProxy,
+              WindowsTunnelMode.tun: l10n.modeTun,
+            },
+          ),
+          AnimatedSize(
+            duration: AppDurations.medium,
+            child: mode == WindowsTunnelMode.tun
+                ? Padding(
+                    padding: const EdgeInsets.only(top: AppSpacing.md),
+                    child: Row(
+                      children: [
+                        Icon(LucideIcons.shieldAlert, size: 16, color: c.warning),
+                        const SizedBox(width: AppSpacing.sm),
+                        Expanded(
+                          child: Text(
+                            l10n.modeTunHint,
+                            style: Theme.of(context).textTheme.bodySmall,
+                          ),
+                        ),
+                      ],
+                    ),
+                  )
+                : const SizedBox(width: double.infinity),
           ),
         ],
       ),

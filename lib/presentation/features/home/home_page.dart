@@ -7,6 +7,7 @@ import '../../../application/servers/servers_controller.dart';
 import '../../../application/vpn/connection_health.dart';
 import '../../../application/vpn/vpn_controller.dart';
 import '../../../core/l10n.dart';
+import '../../../core/platform.dart';
 import '../../../domain/vpn/vpn_core.dart';
 import '../../router/app_router.dart';
 import '../../shell/app_logo.dart';
@@ -110,6 +111,10 @@ class HomePage extends ConsumerWidget {
                 const AppCard(child: Skeleton(height: 46))
               else
                 item(const _NoServerCard()),
+              if (ref.watch(appPlatformProvider).isDesktop) ...[
+                const SizedBox(height: AppSpacing.md),
+                item(const TunnelModeCard()),
+              ],
               const SizedBox(height: AppSpacing.md),
               item(const _SpeedRow()),
               const SizedBox(height: AppSpacing.md),
