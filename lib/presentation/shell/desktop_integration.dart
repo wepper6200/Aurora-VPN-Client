@@ -85,9 +85,7 @@ class _DesktopIntegrationState extends ConsumerState<DesktopIntegration>
           .disconnect()
           .timeout(const Duration(seconds: 6), onTimeout: () {});
     }
-    await trayManager.destroy();
-    await windowManager.setPreventClose(false);
-    await windowManager.destroy();
+    await closeApp();
   }
 
   // --- TrayListener -------------------------------------------------------------
@@ -151,17 +149,39 @@ abstract final class WindowsAutostart {
   }
 }
 
-/// Relaunches the app elevated (TUN needs administrator rights). The current
-/// instance exits first so the single-instance lock is free.
+/// Removes the tray icon and closes the window the way the close button
+/// does (WM_CLOSE): the engine shuts down while the message loop still runs.
+/// window_manager's destroy() posts WM_QUIT instead, and tearing the engine
+/// down after the loop crashes in flutter_windows.dll.
+Future<void> closeApp() async {
+  await trayManager.destroy();
+  await windowManager.setPreventClose(false);
+  await windowManager.close();
+}
+
+/// Passed to the elevated instance: wait for this one to exit instead of
+/// treating it as an already running instance (see windows/runner/main.cpp).
+const restartedFlag = '--restarted';
+
+/// Relaunches the app elevated (TUN needs administrator rights). This
+/// instance closes only once the UAC prompt was accepted; declining it keeps
+/// the app open.
 Future<void> restartAsAdministrator() async {
   final exe = Platform.resolvedExecutable.replaceAll("'", "''");
-  await Process.start('powershell', [
-    '-NoProfile',
-    '-WindowStyle',
-    'Hidden',
-    '-Command',
-    "Start-Sleep -Milliseconds 800; Start-Process -FilePath '$exe' -Verb RunAs",
-  ], mode: ProcessStartMode.detached);
-  await windowManager.setPreventClose(false);
-  await windowManager.destroy();
+  final ProcessResult r;
+  try {
+    r = await Process.run('powershell', [
+      '-NoProfile',
+      '-NonInteractive',
+      '-WindowStyle',
+      'Hidden',
+      '-Command',
+      "Start-Process -FilePath '$exe' -ArgumentList '$restartedFlag' -Verb RunAs",
+    ]);
+  } on ProcessException {
+    return;
+  }
+  // UAC declined: Start-Process throws and PowerShell exits non-zero.
+  if (r.exitCode != 0) return;
+  await closeApp();
 }

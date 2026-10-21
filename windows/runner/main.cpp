@@ -22,9 +22,14 @@ void ActivateExistingWindow() {
 
 int APIENTRY wWinMain(_In_ HINSTANCE instance, _In_opt_ HINSTANCE prev,
                       _In_ wchar_t *command_line, _In_ int show_command) {
+  // Relaunched elevated by the app itself ("Restart as administrator"): the
+  // old instance is closing, so wait for it instead of handing over to it.
+  const bool restarted = ::wcsstr(command_line, L"--restarted") != nullptr;
+
   // vless://, happ://add/… opened while the app runs: hand the link to the
-  // running instance and exit.
-  if (SendAppLinkToInstance()) {
+  // running instance and exit. (It also returns true without a link whenever
+  // our window exists, which is why a restart skips it.)
+  if (!restarted && SendAppLinkToInstance()) {
     return EXIT_SUCCESS;
   }
 
@@ -32,9 +37,13 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance, _In_opt_ HINSTANCE prev,
   HANDLE instance_mutex =
       ::CreateMutex(nullptr, TRUE, L"Local\\AuroraVPN.SingleInstance");
   if (instance_mutex != nullptr && ::GetLastError() == ERROR_ALREADY_EXISTS) {
-    ActivateExistingWindow();
-    ::CloseHandle(instance_mutex);
-    return EXIT_SUCCESS;
+    const DWORD wait =
+        restarted ? ::WaitForSingleObject(instance_mutex, 15000) : WAIT_TIMEOUT;
+    if (wait != WAIT_OBJECT_0 && wait != WAIT_ABANDONED) {
+      ActivateExistingWindow();
+      ::CloseHandle(instance_mutex);
+      return EXIT_SUCCESS;
+    }
   }
 
   // Attach to console when present (e.g., 'flutter run') or create a
@@ -68,6 +77,11 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance, _In_opt_ HINSTANCE prev,
     ::DispatchMessage(&msg);
   }
 
+  // A WM_QUIT that arrives while the window still exists (window_manager's
+  // destroy()) would leave the engine to be torn down by the destructor,
+  // after COM is gone, which crashed in flutter_windows.dll. Tear it down
+  // here first; a no-op when the window was already closed.
+  window.Destroy();
   ::CoUninitialize();
   if (instance_mutex != nullptr) {
     ::ReleaseMutex(instance_mutex);
